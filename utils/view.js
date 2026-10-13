@@ -32,6 +32,9 @@
       this.sound = this.progress.state.sound;
       this.modal = null;
       this.roomReaction = null;
+      this.roomArrival = null;
+      this.roomGift = null;
+      this.pendingArrival = null;
       this.newDecoration = null;
       this.toast = null;
       if (this.progress.updatedRuns) this.say('关卡已更新，通关和小屋收藏已保留', 4500);
@@ -58,20 +61,22 @@
       this.onChange(this);
     }
     audio(name) { if (this.sound) this.playSound(name); }
+    clearRoom() { this.roomReaction = null; this.roomArrival = null; this.roomGift = null; }
     reset() {
       this.game.reset(); this.animation = null; this.hintId = null; this.modal = null;
-      this.newDecoration = null; this.roomReaction = null;
+      this.newDecoration = null; this.pendingArrival = null; this.clearRoom();
       this.startedAt = Date.now(); this.say('新的一局，小猫准备好啦'); this.notify(true);
     }
     startLevel(number, fresh) {
       const game = this.progress.gameFor(number, fresh);
       if (!game) return;
       this.game = game; this.screen = 'game'; this.animation = null; this.hintId = null;
-      this.newDecoration = null; this.roomReaction = null;
+      this.newDecoration = null; this.pendingArrival = null; this.clearRoom();
       this.modal = null; this.toast = null; this.startedAt = Date.now(); this.notify(true);
     }
     showLevels() {
-      this.screen = 'levels'; this.animation = null; this.hintId = null; this.modal = null; this.roomReaction = null; this.notify();
+      this.screen = 'levels'; this.animation = null; this.hintId = null; this.modal = null;
+      this.pendingArrival = null; this.clearRoom(); this.notify();
     }
     nextLevel() {
       if (this.game.status !== 'won' || this.animation) return;
@@ -108,14 +113,38 @@
       if (!result.ok) { this.say('这张被盖住了，先取走上面的图块'); return; }
       if (result.status === 'won' && !this.progress.isComplete(this.game.level.number)) {
         this.newDecoration = Saved.DECORATIONS[this.game.level.number - 1];
+        this.pendingArrival = this.newDecoration;
       }
       this.hintId = null;
       this.animation = { event: result, start: Date.now(), duration: result.matched ? 430 : 190, sounded: false };
       this.audio('tap'); this.notify(true);
     }
+    openRoom() {
+      if (this.roomArrival) return;
+      this.clearRoom(); this.modal = 'room';
+      if (this.pendingArrival && this.game.status === 'won' && !this.animation) {
+        this.roomGift = this.pendingArrival;
+        // The reward was saved on winning. This ceremony is only a transient presentation.
+        this.pendingArrival = null;
+        this.roomArrival = { id: this.roomGift.id, start: Date.now(), landAt: 800, duration: 3200, welcomed: false };
+      }
+      this.notify();
+    }
+    skipArrival() {
+      if (!this.roomArrival) return;
+      this.roomArrival = null; this.roomReaction = null; this.notify();
+    }
+    roomExitControls() {
+      if (!this.roomGift) return [{ action: 'close', label: this.screen === 'levels' ? '回到选关，继续收拾' : '回到通关画面', x: 67, y: 709, w: 256, h: 46 }];
+      return [
+        { action: this.roomArrival ? 'skip-arrival' : this.game.level.number < Core.LEVELS.length ? 'next' : 'levels',
+          label: this.roomArrival ? '跳过动画' : this.game.level.number < Core.LEVELS.length ? '继续第 ' + (this.game.level.number + 1) + ' 关' : '回到选关', x: 67, y: 709, w: 256, h: 46 },
+        { action: 'close', label: '返回通关画面', x: 115, y: 758, w: 160, h: 25 }
+      ];
+    }
     interactFurniture(id) {
       const item = this.progress.decorations().find(item => item.id === id);
-      if (this.modal !== 'room' || !item) return;
+      if (this.modal !== 'room' || !item || this.roomArrival) return;
       const now = Date.now();
       // One short response at a time; repeated taps never queue sounds or animations.
       if (this.roomReaction && now < this.roomReaction.start + this.roomReaction.duration) return;
@@ -123,15 +152,17 @@
       this.audio('tap'); this.notify();
     }
     press(action) {
+      if (action === 'bring-home') { if (this.pendingArrival && !this.animation && this.game.status === 'won') this.openRoom(); return; }
+      if (action === 'skip-arrival') { this.skipArrival(); return; }
       if (action.indexOf('furniture-') === 0) { this.interactFurniture(action.slice(10)); return; }
       if (action.indexOf('collection-') === 0) { this.interactFurniture(action.slice(11)); return; }
       if (action.indexOf('locked-slot-') === 0) { this.say('这个空位暂未开放'); this.notify(); return; }
       if (action === 'sound') { this.sound = !this.sound; this.say(this.sound ? '声音已开启' : '声音已关闭'); this.notify(true); return; }
-      if (action === 'help') { this.modal = 'help'; this.roomReaction = null; this.notify(); return; }
-      if (action === 'room') { this.modal = 'room'; this.roomReaction = null; this.notify(); return; }
-      if (action === 'close') { this.modal = null; this.roomReaction = null; this.notify(); return; }
+      if (action === 'help') { this.modal = 'help'; this.clearRoom(); this.notify(); return; }
+      if (action === 'room') { this.openRoom(); return; }
+      if (action === 'close') { this.modal = null; this.clearRoom(); this.notify(); return; }
       if (action === 'levels') { this.showLevels(); return; }
-      if (action === 'finish') { this.showLevels(); this.modal = 'room'; this.notify(); return; }
+      if (action === 'finish') { if (this.pendingArrival) this.openRoom(); else { this.showLevels(); this.openRoom(); } return; }
       if (action === 'resume') { this.startLevel(this.progress.resumeNumber()); return; }
       if (action === 'next') { this.nextLevel(); return; }
       if (action.indexOf('level-') === 0) { this.startLevel(Number(action.slice(6))); return; }
@@ -142,13 +173,13 @@
     controls() {
       if (this.modal === 'help') return [{ action: 'close', label: '知道啦，开始收拾', x: 67, y: 535, w: 256, h: 46 }];
       if (this.modal === 'room') {
-        const owned = this.progress.decorations(), disabled = !!this.roomReaction;
+        const owned = this.progress.decorations(), disabled = !!(this.roomReaction || this.roomArrival);
         const targets = Art.roomLayout(ROOM.x, ROOM.y, ROOM.w, ROOM.h).targets;
         return owned.map(item => Object.assign({}, targets.find(target => target.id === item.id), {
           action: 'furniture-' + item.id, label: '点击' + item.name + '，' + REACTIONS[item.id].label, disabled
         })).concat(owned.map(item => ({ action: 'collection-' + item.id,
           label: item.name + '，' + REACTIONS[item.id].label, x: 42, y: 449 + (item.number - 1) * 44, w: 306, h: 38, disabled })),
-        [{ action: 'close', label: this.screen === 'levels' ? '回到选关，继续收拾' : '回到通关画面', x: 67, y: 709, w: 256, h: 46 }]);
+        this.roomExitControls());
       }
       const common = [
         { action: 'sound', label: this.sound ? '关闭声音' : '开启声音', x: 297, y: 17, w: 34, h: 34 },
@@ -163,10 +194,11 @@
       }
       if (this.game.status !== 'playing' && !this.animation) {
         if (this.game.status === 'won') return [
-          { action: this.game.level.number < Core.LEVELS.length ? 'next' : 'finish',
-            label: this.game.level.number < Core.LEVELS.length ? '进入第' + (this.game.level.number + 1) + '关：' + Core.LEVELS[this.game.level.number].name : '看看布置好的小屋', x: 67, y: 515, w: 256, h: 46 },
+          { action: this.pendingArrival ? 'bring-home' : this.game.level.number < Core.LEVELS.length ? 'next' : 'finish',
+            label: this.pendingArrival ? '带回小屋' : this.game.level.number < Core.LEVELS.length ? '进入第' + (this.game.level.number + 1) + '关：' + Core.LEVELS[this.game.level.number].name : '看看布置好的小屋', x: 67, y: 515, w: 256, h: 46 },
           { action: 'restart', label: '再玩这一关', x: 67, y: 570, w: 121, h: 38 },
-          { action: this.game.level.number === Core.LEVELS.length ? 'levels' : 'room', label: this.game.level.number === Core.LEVELS.length ? '选择关卡' : '回小屋看看', x: 202, y: 570, w: 121, h: 38 }
+          { action: this.game.level.number === Core.LEVELS.length ? 'levels' : this.pendingArrival ? 'next' : 'room',
+            label: this.game.level.number === Core.LEVELS.length ? '选择关卡' : this.pendingArrival ? '先去下一关' : '回小屋看看', x: 202, y: 570, w: 121, h: 38 }
         ];
         return [
           { action: 'restart', label: '重新开始', x: 67, y: 515, w: 256, h: 46 },
@@ -251,6 +283,18 @@
     }
     draw(now) {
       const ctx = this.ctx;
+      if (this.roomArrival) {
+        const arrival = this.roomArrival, age = now - arrival.start;
+        if (this.modal !== 'room' || age >= arrival.duration) {
+          this.roomArrival = null; this.roomReaction = null; this.notify();
+        } else if (age >= arrival.landAt && !arrival.welcomed) {
+          arrival.welcomed = true;
+          this.roomReaction = Object.assign({}, REACTIONS[arrival.id], {
+            id: arrival.id, start: arrival.start + arrival.landAt, duration: arrival.duration - arrival.landAt
+          });
+          this.audio('tap'); this.notify();
+        }
+      }
       if (this.roomReaction && (this.modal !== 'room' || now >= this.roomReaction.start + this.roomReaction.duration)) {
         this.roomReaction = null; this.notify();
       }
@@ -414,27 +458,30 @@
     drawCollection(now) {
       const ctx = this.ctx, owned = this.progress.decorations(), next = this.progress.nextDecoration();
       this.overlay(23, 98, 344, 687);
-      text(ctx, '我们的小屋', 48, 134, 22, INK, '700');
+      text(ctx, this.roomGift ? '新家具到家啦' : '我们的小屋', 48, 134, 22, INK, '700');
       Art.box(ctx, 280, 119, 60, 28, 14, '#e8eedc');
       text(ctx, owned.length + ' / 5', 310, 133, 12, '#75916a', '600', 'center');
-      text(ctx, '一点点收拾，一点点变成喜欢的样子', 48, 163, 12, '#8c9a80');
-      const reaction = this.roomReaction;
+      text(ctx, this.roomGift ? this.roomGift.name + '，让小屋又暖了一点' : '一点点收拾，一点点变成喜欢的样子', 48, 163, 12, '#8c9a80');
+      const reaction = this.roomReaction, arrival = this.roomArrival;
       Art.isometricRoom(ctx, ROOM.x, ROOM.y, ROOM.w, ROOM.h, new Set(owned.map(item => item.id)),
-        reaction && { id: reaction.id, elapsed: Math.max(0, now - reaction.start), duration: reaction.duration });
-      if (reaction) Art.box(ctx, 47, 416, 296, 25, 12, '#f4eedc');
-      text(ctx, reaction ? reaction.message : owned.length ? '点点家具或下方小卡，看看小猫的回应' : '小猫等着和你一起，把家布置得暖暖的', 195, 429, 11, reaction ? '#8a785b' : '#899979', '400', 'center');
+        reaction && { id: reaction.id, elapsed: Math.max(0, now - reaction.start), duration: reaction.duration },
+        arrival && { id: arrival.id, elapsed: Math.max(0, now - arrival.start), landAt: arrival.landAt });
+      if (reaction || arrival) Art.box(ctx, 47, 416, 296, 25, 12, '#f4eedc');
+      text(ctx, reaction ? reaction.message : arrival ? '轻轻放好，给小猫一个小惊喜～' : owned.length ? '点点家具或下方小卡，看看小猫的回应' : '小猫等着和你一起，把家布置得暖暖的', 195, 429, 11, reaction || arrival ? '#8a785b' : '#899979', '400', 'center');
       Saved.DECORATIONS.forEach((item, index) => {
         const y = 449 + index * 44, collected = this.progress.isComplete(item.number);
-        const responding = reaction && reaction.id === item.id;
+        const responding = (reaction && reaction.id === item.id) || (arrival && arrival.id === item.id);
         Art.box(ctx, 42, y, 306, 38, 10, responding ? '#f1e6cd' : collected ? '#edf1df' : '#f5f4e9', responding ? '#d8c197' : null);
         ctx.save(); if (!collected) ctx.globalAlpha = 0.38;
         Art.decoration(ctx, item.id, 73, y + 19, 32); ctx.restore();
         text(ctx, item.name, 103, y + 11, 13, collected ? INK : '#8f9a80', '600');
         text(ctx, collected ? REACTIONS[item.id].label : item.note, 103, y + 27, 11, '#8f9c7f');
-        text(ctx, responding ? '陪伴中' : collected ? '点点我' : '第 ' + item.number + ' 关', 331, y + 11, 10, collected ? '#789267' : '#a3ad94', '400', 'right');
+        text(ctx, responding ? arrival && !arrival.welcomed ? '正在安放' : '陪伴中' : collected ? '点点我' : '第 ' + item.number + ' 关', 331, y + 11, 10, collected ? '#789267' : '#a3ad94', '400', 'right');
       });
       text(ctx, next ? '下一件：通过第 ' + next.number + ' 关，带回' + next.name : '五件小物都齐啦，随时回来陪小猫', 195, 683, 12, '#879878', '400', 'center');
-      this.button(67, 709, 256, 46, this.screen === 'levels' ? '回到选关，继续收拾' : '回到通关画面');
+      const exits = this.roomExitControls();
+      this.button(67, 709, 256, 46, exits[0].label, !!arrival);
+      if (exits.length > 1) text(ctx, exits[1].label, 195, 770, 11, '#8c9a80', '400', 'center');
     }
     overlay(x, y, w, h) {
       const ctx = this.ctx;
@@ -468,7 +515,7 @@
       Art.companion(ctx, 195, 309, 112, won);
       if (won) [-1, 0, 1].forEach((v, i) => Art.star(ctx, 195 + v * 39, 239 - (i === 1 ? 8 : 0), 13, '#e9bc68'));
       text(ctx, won ? (last ? '五间小屋都收拾好啦！' : '小屋收拾好啦！') : '小窝有点挤啦', 195, 381, last && won ? 20 : 22, INK, '700', 'center');
-      text(ctx, won ? (this.newDecoration ? '给小猫的新心意，已经摆进小屋啦' : '熟悉的小屋，又收拾好了一次') : '没关系，换个顺序再试试喵', 195, 419, 12, '#8c9a80', '400', 'center');
+      text(ctx, won ? (this.pendingArrival ? '给小猫的新心意，一起带回家吧' : this.newDecoration ? '给小猫的新心意，已经摆进小屋啦' : '熟悉的小屋，又收拾好了一次') : '没关系，换个顺序再试试喵', 195, 419, 12, '#8c9a80', '400', 'center');
       if (won) {
         const reward = Saved.DECORATIONS[level.number - 1];
         Art.box(ctx, 66, 440, 258, 63, 13, '#eef1e1');
@@ -480,14 +527,14 @@
         text(ctx, '消除 ' + this.game.matches + ' 组', 143, 469, 13, '#789169', '500', 'center');
         text(ctx, '取牌 ' + this.game.steps + ' 次', 252, 469, 13, '#789169', '500', 'center');
       }
-      this.button(67, 515, 256, 46, won ? (last ? '回小屋看看' : '下一关：' + Core.LEVELS[level.number].name) : '重新开始');
+      this.button(67, 515, 256, 46, won ? (this.pendingArrival ? '带回小屋' : last ? '回小屋看看' : '下一关：' + Core.LEVELS[level.number].name) : '重新开始');
       if (!won) {
         const remaining = this.game.remainingTools('undo');
         this.button(67, 570, 256, 38, remaining ? '撤回一步（剩余 ' + remaining + ' 次）' : '撤回次数已用完', true, !remaining || !this.game.history.length);
         text(ctx, '返回选关', 195, 628, 11, '#90a07f', '400', 'center');
       } else {
         this.button(67, 570, 121, 38, '再玩这一关', true);
-        this.button(202, 570, 121, 38, last ? '选择关卡' : '回小屋看看', true);
+        this.button(202, 570, 121, 38, last ? '选择关卡' : this.pendingArrival ? '先去下一关' : '回小屋看看', true);
         text(ctx, '第 ' + level.number + ' 关 · 消除 ' + this.game.matches + ' 组 · 取牌 ' + this.game.steps + ' 次', 195, 620, 10, '#a3ad93', '400', 'center');
       }
     }

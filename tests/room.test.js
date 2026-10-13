@@ -71,13 +71,14 @@ test('坏局面不丢失已得装饰，无效或跳关的通关记录不会解�
 });
 test('通关后可查看小屋、返回结算并进入下一关，集齐后主按钮打开小屋', () => {
   const view = new GameView({ ctx: {}, storage: memory() }); view.press('resume'); win(view);
-  assert.ok(view.controls().some(item => item.action === 'room'));
-  view.press('room'); view.press('close');
+  assert.ok(view.controls().some(item => item.action === 'bring-home'));
+  view.press('bring-home'); view.press('close');
   assert.equal(view.screen, 'game'); assert.equal(view.game.status, 'won');
   view.press('next'); assert.equal(view.game.level.number, 2); assert.equal(view.modal, null);
   for (let number = 2; number <= 5; number++) { win(view); if (number < 5) view.press('next'); }
-  assert.deepEqual(view.controls().map(item => item.action), ['finish', 'restart', 'levels']);
-  view.press('finish'); assert.equal(view.screen, 'levels'); assert.equal(view.modal, 'room');
+  assert.deepEqual(view.controls().map(item => item.action), ['bring-home', 'restart', 'levels']);
+  view.press('bring-home'); assert.equal(view.screen, 'game'); assert.equal(view.modal, 'room');
+  view.press('skip-arrival'); view.press('levels'); view.press('room');
   view.press('close'); assert.equal(view.progress.nextDecoration(), null);
   assert.equal(view.resumeLabel(), '再陪小猫玩一局');
 });
@@ -135,4 +136,61 @@ test('家具回应限为一个，尊重静音，结束或关闭会清理且从�
   view.press('furniture-picture'); view.press('levels'); assert.equal(view.roomReaction, null);
   assert.equal(storage.read(KEY), saved);
   assert.deepEqual(view.game.moves, moves); assert.deepEqual(view.game.toolsUsed, tools);
+});
+
+test('五关首次奖励各播放一次落位和欢迎，动画前已保存，结束后可直接继续', () => {
+  const ctx = new Proxy({}, { get(target, key) { return key in target ? target[key] : () => {}; } });
+  const storage = memory(), sounds = [], view = new GameView({ ctx, storage, playSound: name => sounds.push(name) });
+  view.press('resume');
+  for (const item of DECORATIONS) {
+    win(view);
+    const saved = storage.read(KEY), before = sounds.length;
+    assert.equal(new Progress(storage).decorations().length, item.number);
+    view.press('bring-home');
+    const arrival = view.roomArrival;
+    assert.equal(arrival.id, item.id); assert.equal(view.pendingArrival, null);
+    view.press('bring-home'); assert.equal(view.roomArrival, arrival);
+    view.press('collection-' + item.id); assert.equal(view.roomReaction, null);
+    assert.ok(view.controls().some(control => control.action === 'skip-arrival' && !control.disabled));
+    view.draw(arrival.start + 400); assert.equal(view.roomReaction, null);
+    view.draw(arrival.start + 800); assert.equal(view.roomReaction.id, item.id);
+    assert.equal(sounds.length, before + 1);
+    view.draw(arrival.start + 1400); assert.equal(sounds.length, before + 1);
+    view.draw(arrival.start + 3200);
+    assert.equal(view.roomArrival, null); assert.equal(view.roomReaction, null);
+    assert.equal(storage.read(KEY), saved);
+    assert.ok(view.controls().some(control => control.action === (item.number < 5 ? 'next' : 'levels')));
+    view.press('close'); view.press('room'); assert.equal(view.roomArrival, null);
+    view.press('close');
+    if (item.number < 5) view.press('next');
+  }
+  view.press('restart'); win(view);
+  assert.equal(view.pendingArrival, null);
+  assert.ok(!view.controls().some(control => control.action === 'bring-home'));
+});
+
+test('跳过、关闭、后台过期和重新打开均不重播欢迎，不丢家具或补播声音', () => {
+  const ctx = new Proxy({}, { get(target, key) { return key in target ? target[key] : () => {}; } });
+  for (const exit of ['skip-arrival', 'close', 'background', 'reload', 'next']) {
+    const storage = memory(), sounds = [], view = new GameView({ ctx, storage, playSound: name => sounds.push(name) });
+    view.press('resume'); win(view);
+    if (exit === 'next') {
+      view.press('next'); assert.equal(view.pendingArrival, null);
+      view.press('room'); assert.equal(view.roomArrival, null); continue;
+    }
+    view.press('bring-home');
+    const arrival = view.roomArrival, saved = storage.read(KEY), before = sounds.length;
+    if (exit === 'reload') {
+      const restored = new GameView({ ctx, storage }); restored.press('room');
+      assert.equal(restored.progress.decorations().length, 1); assert.equal(restored.roomArrival, null);
+    } else {
+      if (exit !== 'background') view.press(exit);
+      view.draw(arrival.start + 6000);
+      assert.equal(view.roomArrival, null); assert.equal(view.roomReaction, null);
+      assert.equal(sounds.length, before);
+      view.press('close'); view.press('room'); assert.equal(view.roomArrival, null);
+    }
+    assert.equal(storage.read(KEY), saved);
+    assert.equal(new Progress(storage).decorations().length, 1);
+  }
 });

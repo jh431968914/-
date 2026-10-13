@@ -110,3 +110,18 @@ test('小游戏背景音乐首次操作启动，切换与通知不重播，静�
   const muted = mock({ storage: new Map([[KEY, JSON.stringify({ version: 1, sound: false })]]) });
   muted.tap(195, 737); assert.ok(muted.sounds.every(sound => !sound.playing)); muted.runtime.destroy();
 });
+
+test('小游戏首次奖励支持安全区内跳过与续关，旧 Canvas 和静音下正常落位', () => {
+  const dev = mock({ noEllipse: true }), view = dev.runtime.view;
+  view.press('sound'); view.press('resume');
+  view.game.level.solution.forEach(id => { view.pick(id); view.animation = null; });
+  dev.tap(195, 538); assert.equal(view.roomArrival.id, 'cushion');
+  view.draw(view.roomArrival.start + 400); view.draw(view.roomArrival.start + 1200);
+  assert.ok(dev.sounds.every(sound => !sound.playing));
+  dev.info.windowWidth = 320; dev.info.windowHeight = 640; dev.info.screenHeight = 640;
+  dev.info.safeArea.bottom = 620; dev.callbacks.WindowResize();
+  dev.tap(195, 732); assert.equal(view.roomArrival, null); assert.equal(view.modal, 'room');
+  dev.callbacks.Hide(); dev.callbacks.Show(); assert.equal(view.roomReaction, null);
+  dev.tap(195, 732); assert.equal(view.game.level.number, 2); assert.equal(view.modal, null);
+  assert.deepEqual(JSON.parse(dev.storage.get(KEY)).completed, [1]); dev.runtime.destroy();
+});

@@ -43,7 +43,8 @@
     });
     targets.forEach((button, key) => { if (!retained.has(key)) { button.remove(); targets.delete(key); } });
     if (focused && focused.classList.contains('hit-target') && !focused.isConnected) {
-      const next = Array.from(targets.values()).find(button => !button.disabled); if (next) next.focus({ preventScroll: true });
+      const continuation = focused.dataset.key === 'action-skip-arrival' && (targets.get('action-next') || targets.get('action-levels'));
+      const next = continuation || Array.from(targets.values()).find(button => !button.disabled); if (next) next.focus({ preventScroll: true });
     }
     const menu = view.screen === 'levels';
     status.textContent = menu ? '选关页，已通关 ' + view.progress.state.completed.length + ' / 5 关，已解锁 ' + view.progress.unlocked() + ' 关。' : view.game.status === 'won' ? '第 ' + view.game.level.number + ' 关过关啦！小屋收拾好啦。' : view.game.status === 'lost' ?
@@ -55,13 +56,15 @@
         '等距视角的小屋有两面墙、木地板和坐在小窝里的猫咪。' +
         (owned.length ? '已摆放：' + owned.map(item => item.name).join('、') + '。' : '小屋还在等待第一件装饰。') +
         (nextReward ? '通过第 ' + nextReward.number + ' 关获得' + nextReward.name + '。' : '五件装饰已全部收集。');
-      status.textContent += view.roomReaction ? ' 小猫回应：' + view.roomReaction.message :
+      if (view.roomArrival) status.textContent += ' 新家具入屋：' + view.roomGift.name + (view.roomArrival.welcomed ? '已放好，小猫来欢迎啦。' : '正在轻轻落位，可跳过动画。');
+      status.textContent += view.roomReaction ? ' 小猫回应：' + view.roomReaction.message : view.roomArrival ? '' :
         owned.length ? ' 点击家具或下方收藏卡片，陪小猫互动。' : '';
     } else if (menu) {
       status.textContent += ' 已收集 ' + owned.length + ' / 5 件装饰。' + (nextReward ? '下一件奖励：' + nextReward.name + '。' : '小屋装饰已集齐。');
     } else if (view.game.status === 'won') {
       const reward = MeowProgress.DECORATIONS[view.game.level.number - 1];
-      status.textContent += view.newDecoration ? ' 获得' + reward.name + '，已自动摆进小屋。' : ' 小屋已摆放' + reward.name + '。';
+      status.textContent += view.pendingArrival ? ' 获得' + reward.name + '，点击带回小屋，看看小猫的欢迎。' :
+        view.newDecoration ? ' 获得' + reward.name + '，已自动摆进小屋。' : ' 小屋已摆放' + reward.name + '。';
     }
     canvas.setAttribute('aria-label', view.modal === 'room' ? '等距视角猫咪小屋与装饰收藏' : menu ? '猫咪小屋与关卡选择' : '猫咪叠层三消棋盘');
     document.getElementById('chapter-number').textContent = menu ? '05' : String(view.game.level.number).padStart(2, '0');

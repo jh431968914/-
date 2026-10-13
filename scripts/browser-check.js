@@ -97,11 +97,11 @@ async function main() {
       for (const id of level.solution) await pick(id);
       await statusMatches(new RegExp('第 ' + info.number + ' 关过关啦'));
       const reward = ['暖暖软垫', '毛线小篮', '窗边绿植', '猫爪相框', '暖光小灯'][info.number - 1];
-      await statusMatches(new RegExp('获得' + reward + '，已自动摆进小屋'));
-      await page.locator('[data-key="action-' + (info.number < 5 ? 'next' : 'finish') + '"]').waitFor({ state: 'visible' });
+      await statusMatches(new RegExp('获得' + reward + '，点击带回小屋'));
+      await page.locator('[data-key="action-bring-home"]').waitFor({ state: 'visible' });
       await screenshot('victory-' + info.number);
-      if (info.number < 5) {
-        await click('room');
+      {
+        await click('bring-home'); await click('skip-arrival');
         await statusMatches(new RegExp('我的小屋，已收集 ' + info.number + ' / 5 件装饰'));
         await statusMatches(new RegExp('已摆放：.*' + reward));
         if (info.number === 1) await screenshot('room-first');

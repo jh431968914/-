@@ -1,6 +1,6 @@
 {
   "name": "meow-match-prototype",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "description": "猫咪主题叠层三消 5 关体验版与微信小游戏",
   "scripts": {

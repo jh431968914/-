@@ -220,7 +220,7 @@
       target('lamp', 5, 0.95, 0, -0.8, -2.35, 1.9, 2.55)
     ] };
   }
-  function isometricRoom(ctx, x, y, width, height, owned, reaction) {
+  function isometricRoom(ctx, x, y, width, height, owned, reaction, arrival) {
     ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 1;
     const { sx, sy, sz, project } = roomLayout(x, y, width, height);
     const elapsed = reaction ? reaction.elapsed : 0;
@@ -228,6 +228,25 @@
     const strength = reaction ? smooth(elapsed / 450) * smooth((reaction.duration - elapsed) / 550) : 0;
     const active = id => reaction && reaction.id === id ? strength : 0;
     const pulse = Math.sin(elapsed / 190);
+    const landing = arrival ? smooth(arrival.elapsed / arrival.landAt) : 1;
+    function beginFurniture(id) {
+      ctx.save();
+      if (arrival && arrival.id === id) {
+        ctx.translate(0, -sx * 1.05 * (1 - landing));
+        ctx.globalAlpha = landing;
+      }
+    }
+    function endFurniture(id, u, v, z) {
+      ctx.restore();
+      if (!arrival || arrival.id !== id) return;
+      const sparkle = Math.max(0, 1 - Math.abs(arrival.elapsed - arrival.landAt) / 650);
+      if (!sparkle) return;
+      const p = project(u, v, z);
+      ctx.save(); ctx.globalAlpha = sparkle;
+      [-1, 1].forEach((side, index) => star(ctx, p[0] + side * sx * (0.65 + sparkle * 0.2),
+        p[1] - sx * (0.6 + index * 0.25), sx * 0.16, '#dfb969'));
+      ctx.restore();
+    }
     function polygon(points, fill, edge) {
       ctx.beginPath(); points.forEach((point, index) => { if (index) ctx.lineTo(point[0], point[1]); else ctx.moveTo(point[0], point[1]); });
       ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
@@ -271,6 +290,7 @@
     block(0.65, 0.58, 0, 0.19, 0.42, 0.64, '#b8c59e', '#98ad88', '#a7b794');
     block(0.91, 0.58, 0, 0.15, 0.42, 0.48, '#e3cb9f', '#c7b18a', '#d4c096');
     if (owned.has('picture')) {
+      beginFurniture('picture');
       stroke(ctx, [project(0.04, 2.45, 2.15), project(0.04, 3.08, 2.49), project(0.04, 3.7, 2.15)], '#cbb794', 1);
       polygon([project(0.04, 2.45, 1.06), project(0.04, 3.7, 1.06), project(0.04, 3.7, 2.15), project(0.04, 2.45, 2.15)], '#c6a681');
       polygon([project(0.06, 2.55, 1.15), project(0.06, 3.6, 1.15), project(0.06, 3.6, 2.06), project(0.06, 2.55, 2.06)], '#fff8e7');
@@ -278,9 +298,11 @@
       ctx.save(); ctx.translate(center[0], center[1]); ctx.transform(sx, -sy, 0, sz, 0, 0);
       icon(ctx, 5, 0, 0, 0.78); ctx.restore();
       if (active('picture')) star(ctx, center[0] + sx * 0.7, center[1] - sx * 0.7, sx * 0.18 * strength, '#dfb85f');
+      endFurniture('picture', 0.08, 3.07, 1.61);
     }
     // Furniture is painted from the back of the room towards the cat in front.
     if (owned.has('plant')) {
+      beginFurniture('plant');
       shadow(0.85, 3.55, 0.52, 0.4);
       const u = 0.5, v = 3.2, d = 0.66, h = 0.45, inset = 0.1;
       polygon([project(u + inset, v + d - inset), project(u + d - inset, v + d - inset), project(u + d, v + d, h), project(u, v + d, h)], '#d8b990');
@@ -293,8 +315,10 @@
       ellipse(ctx, p[0] + sx * 0.14, p[1] - sx * 0.86, sx * 0.14, sx * 0.28, '#a8c092', 0.65);
       ellipse(ctx, p[0] - sx * 0.09, p[1] - sx * 1.12, sx * 0.12, sx * 0.25, '#88a986', -0.4);
       ctx.restore();
+      endFurniture('plant', 0.83, 3.53, 1);
     }
     if (owned.has('lamp')) {
+      beginFurniture('lamp');
       const bottom = project(5.0, 0.95), top = project(5.0, 0.95, 1.43);
       const warmth = active('lamp');
       ellipse(ctx, top[0], top[1], sx * (0.72 + warmth * 0.6), sx * (0.78 + warmth * 0.55), 'rgba(240, 206, 136, 0.22)');
@@ -310,8 +334,10 @@
       stroke(ctx, [[top[0] - sx * 0.15, top[1] - sx * 0.34], [top[0] - sx * 0.3, top[1] + sx * 0.08]], '#f0dba9', 2.4);
       ellipse(ctx, top[0], top[1] + sx * 0.19, sx * 0.5, sy * 0.16, '#f7dda4');
       star(ctx, top[0] + sx * 0.04, top[1] - sx * 0.09, sx * 0.1, '#fff4cf');
+      endFurniture('lamp', 5, 0.95, 1.43);
     }
     if (owned.has('basket')) {
+      beginFurniture('basket');
       shadow(2.28, 3.35, 0.78, 0.47);
       block(1.7, 2.9, 0, 1.14, 0.94, 0.35, '#e1c7a0', '#d4b68d', '#c2a179');
       const p = project(2.27, 3.37, 0.38);
@@ -323,12 +349,15 @@
       icon(ctx, 4, p[0] + sx * 0.25, p[1] - sx * 0.09, sx * 0.53);
       for (let i = 0; i < 4; i++) stroke(ctx, [project(1.8 + i * 0.28, 3.85, 0.03), project(1.8 + i * 0.28, 3.85, 0.28)], '#bd9d76', 0.8);
       stroke(ctx, [project(1.72, 3.85, 0.14), project(2.82, 3.85, 0.14)], '#ecd2ad', 0.9);
+      endFurniture('basket', 2.27, 3.37, 0.38);
     }
     shadow(4.13, 3.15, 1.03, 0.88);
     if (owned.has('cushion')) {
+      beginFurniture('cushion');
       floorRound(3.15, 2.4, 0.02, 1.98, 1.5, 0.24, '#bf9283');
       floorRound(3.15, 2.4, 0.21, 1.98, 1.5, 0.24, '#d8a697');
       floorRound(3.27, 2.51, 0.24, 1.74, 1.28, 0.2, '#e9c1b0');
+      endFurniture('cushion', 4.13, 3.15, 0.24);
     }
     const sniff = active('plant'), play = active('basket'), pose = {
       rest: active('cushion') * (0.96 + 0.04 * Math.sin(elapsed / 380)) + active('lamp') * 0.3,
@@ -336,7 +365,8 @@
       tilt: sniff * (-0.16 + 0.03 * pulse) + play * 0.06 * pulse
     };
     // Walk over to sniff the plant, then return along the same route.
-    const cat = project(4.13 - sniff * 2.1, 3.15 + sniff * 1.38, owned.has('cushion') ? 0.24 * (1 - sniff) : 0.01);
+    const cushionHeight = arrival && arrival.id === 'cushion' ? landing : 1;
+    const cat = project(4.13 - sniff * 2.1, 3.15 + sniff * 1.38, owned.has('cushion') ? 0.24 * (1 - sniff) * cushionHeight : 0.01);
     if (play) {
       const ball = project(3.12 + 0.22 * pulse * play, 3.96, 0.14);
       ctx.save(); ctx.globalAlpha = play;

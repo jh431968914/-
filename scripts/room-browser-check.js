@@ -64,9 +64,10 @@ async function main() {
         await page.locator('[data-key="action-resume"]').click();
         await page.locator('[data-key="tile-' + level.solution.at(-1) + '"]').click();
         await page.waitForFunction(() => document.getElementById('interaction-layer').getAttribute('aria-busy') === 'false');
-        assert.match(await page.locator('#live-status').textContent(), /获得暖光小灯，已自动摆进小屋/);
+        assert.match(await page.locator('#live-status').textContent(), /获得暖光小灯，点击带回小屋/);
         await page.screenshot({ path: path.resolve(__dirname, '../tests/room-v9-victory-mobile.png'), fullPage: true });
-        await page.locator('[data-key="action-finish"]').click();
+        await page.locator('[data-key="action-bring-home"]').click();
+        await page.locator('[data-key="action-skip-arrival"]').click();
         assert.match(await page.locator('#live-status').textContent(), /五件装饰已全部收集/);
       }
       await context.close();
