@@ -89,3 +89,50 @@ test('无法写入存储时奖励在本次游戏仍可显示，页面提示保�
   assert.match(view.toast.message, /进度暂时无法保存/);
   view.press('next'); assert.equal(view.progress.decorations().length, 1);
 });
+
+test('家具只在小屋内且已收集时可互动，场景与卡片在缩放后均能点中', () => {
+  const view = new GameView({ ctx: {}, width: 320, height: 560,
+    storage: memory({ version: 1, completed: [1, 2, 3], sound: false }) });
+  view.press('furniture-cushion'); assert.equal(view.roomReaction, null);
+  view.press('room'); view.press('furniture-lamp'); assert.equal(view.roomReaction, null);
+  assert.equal(view.controls().length, 7);
+  for (const item of DECORATIONS.slice(0, 3)) {
+    for (const prefix of ['furniture-', 'collection-']) {
+      const control = view.controls().find(control => control.action === prefix + item.id);
+      view.pointer(view.offsetX + (control.x + control.w / 2) * view.scale,
+        view.offsetY + (control.y + control.h / 2) * view.scale);
+      assert.equal(view.roomReaction.id, item.id);
+      view.press('close'); view.press('room');
+    }
+  }
+});
+
+test('家具回应限为一个，尊重静音，结束或关闭会清理且从不写入牌局存档', () => {
+  const storage = memory({ version: 1, completed: [1, 2, 3, 4, 5], sound: false });
+  const sounds = [], ctx = new Proxy({}, { get(target, key) { return key in target ? target[key] : () => {}; } });
+  const view = new GameView({ ctx, storage, playSound: name => sounds.push(name) });
+  view.press('resume'); view.pick(view.game.available()[0].id); view.animation = null;
+  const saved = storage.read(KEY), moves = view.game.moves.slice(), tools = Object.assign({}, view.game.toolsUsed);
+  view.press('levels'); view.press('room');
+  for (const item of DECORATIONS) {
+    view.press('furniture-' + item.id);
+    const reaction = view.roomReaction;
+    view.press('furniture-' + item.id); view.press('collection-cushion');
+    assert.equal(view.roomReaction, reaction, '连续点击不重启动画或排队');
+    assert.equal(view.animation, null);
+    assert.ok(view.controls().filter(control => control.action !== 'close').every(control => control.disabled));
+    view.draw(reaction.start + 850);
+    assert.equal(view.roomReaction, reaction);
+    view.draw(reaction.start + reaction.duration);
+    assert.equal(view.roomReaction, null);
+    assert.ok(view.controls().every(control => !control.disabled));
+  }
+  assert.deepEqual(sounds, []);
+  view.sound = true; view.press('collection-basket');
+  assert.deepEqual(sounds, ['tap']);
+  view.press('close'); assert.equal(view.roomReaction, null);
+  view.press('room'); assert.equal(view.roomReaction, null);
+  view.press('furniture-picture'); view.press('levels'); assert.equal(view.roomReaction, null);
+  assert.equal(storage.read(KEY), saved);
+  assert.deepEqual(view.game.moves, moves); assert.deepEqual(view.game.toolsUsed, tools);
+});

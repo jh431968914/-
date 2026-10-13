@@ -76,6 +76,27 @@ test('微信旧存档自动显示全部装饰，缺少 ellipse 时仍能绘制�
   assert.equal(dev.runtime.view.screen, 'levels'); dev.runtime.destroy();
 });
 
+test('小游戏家具触摸适配安全区与小屏，取消不触发，后台归来不会留下过期动画', () => {
+  const storage = new Map([[KEY, JSON.stringify({ version: 1, completed: [1, 2, 3, 4, 5], sound: false })]]);
+  const dev = mock({ storage, noEllipse: true }), view = dev.runtime.view;
+  dev.info.windowWidth = 320; dev.info.windowHeight = 640; dev.info.screenHeight = 640;
+  dev.info.safeArea.bottom = 620; dev.callbacks.WindowResize();
+  dev.tap(307, 231);
+  for (const id of ['cushion', 'basket', 'plant', 'picture', 'lamp']) {
+    const control = view.controls().find(item => item.action === 'furniture-' + id);
+    const x = control.x + control.w / 2, y = control.y + control.h / 2, touch = dev.contact(x, y);
+    dev.callbacks.TouchStart({ touches: [touch] }); dev.callbacks.TouchCancel(); dev.callbacks.TouchEnd({ changedTouches: [touch] });
+    assert.equal(view.roomReaction, null);
+    dev.tap(x, y); assert.equal(view.roomReaction.id, id);
+    view.draw(view.roomReaction.start + 900);
+    dev.callbacks.Hide(); assert.equal(dev.pending.size, 0);
+    view.roomReaction.start -= 5000; dev.callbacks.Show();
+    assert.equal(view.roomReaction, null); assert.equal(dev.pending.size, 1);
+  }
+  assert.ok(dev.sounds.every(sound => !sound.playing));
+  dev.tap(195, 715); assert.equal(view.modal, null); dev.runtime.destroy();
+});
+
 test('小游戏背景音乐首次操作启动，切换与通知不重播，静音、后台和卸载正确处理', () => {
   const dev = mock(), music = dev.sounds.find(sound => sound.loop);
   assert.equal(music.playing, false); dev.tap(195, 737); assert.equal(music.playing, true);

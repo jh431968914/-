@@ -55,6 +55,8 @@
         '等距视角的小屋有两面墙、木地板和坐在小窝里的猫咪。' +
         (owned.length ? '已摆放：' + owned.map(item => item.name).join('、') + '。' : '小屋还在等待第一件装饰。') +
         (nextReward ? '通过第 ' + nextReward.number + ' 关获得' + nextReward.name + '。' : '五件装饰已全部收集。');
+      status.textContent += view.roomReaction ? ' 小猫回应：' + view.roomReaction.message :
+        owned.length ? ' 点击家具或下方收藏卡片，陪小猫互动。' : '';
     } else if (menu) {
       status.textContent += ' 已收集 ' + owned.length + ' / 5 件装饰。' + (nextReward ? '下一件奖励：' + nextReward.name + '。' : '小屋装饰已集齐。');
     } else if (view.game.status === 'won') {

@@ -125,15 +125,27 @@
     }
     ctx.restore();
   }
-  function companion(ctx, x, y, size, happy) {
+  function companion(ctx, x, y, size, happy, pose) {
+    pose = pose || {};
+    const rest = pose.rest || 0, reach = pose.reach || 0, wave = pose.wave || 0;
     ctx.save(); ctx.translate(x, y); ctx.scale(size / 100, size / 100);
     ellipse(ctx, 0, 29, 44, 7, '#dadfc9');
     ctx.strokeStyle = '#dfa461'; ctx.lineWidth = 13; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(17, 20); ctx.bezierCurveTo(62, 40, 57, -4, 43, 6); ctx.stroke();
-    ellipse(ctx, 0, 9, 30, 25, '#f0b774');
-    ellipse(ctx, 0, 15, 16, 18, '#ffe6b7');
+    ctx.beginPath(); ctx.moveTo(17, 20); ctx.bezierCurveTo(62, 40, 57 + wave * 6, -4 + rest * 20, 43, 6 + rest * 15); ctx.stroke();
+    ellipse(ctx, rest * 4, 9 + rest * 10, 30 + rest * 9, 25 - rest * 9, '#f0b774');
+    ellipse(ctx, 0, 15 + rest * 8, 16 + rest * 8, 18 - rest * 9, '#ffe6b7');
     ellipse(ctx, -18, 28, 11, 6, '#f4c48a'); ellipse(ctx, 18, 28, 11, 6, '#f4c48a');
-    ctx.translate(0, -20); ctx.scale(1.2, 1.2); face(ctx, 0, happy);
+    ctx.save(); ctx.translate(-rest * 13, -20 + rest * 29);
+    ctx.rotate(pose.tilt || 0); ctx.scale(1.2 - rest * 0.2, 1.2 - rest * 0.2); face(ctx, 0, happy); ctx.restore();
+    if (reach) {
+      stroke(ctx, [[-17, 12], [-21 - reach * 18, 20 - reach * 7]], '#f4c48a', 12);
+      ellipse(ctx, -21 - reach * 18, 20 - reach * 7, 9, 6, '#f8ce97', -0.2);
+    }
+    if (wave) {
+      stroke(ctx, [[22, 14], [32, 10 - wave * 26]], '#f4c48a', 12);
+      ellipse(ctx, 32, 10 - wave * 26, 8, 9, '#f8ce97');
+      ellipse(ctx, 32, 12 - wave * 26, 3.5, 3, '#dfa79b');
+    }
     ctx.restore();
   }
   function plant(ctx, x, y, scale) {
@@ -189,13 +201,33 @@
     }
     ctx.restore();
   }
-  function isometricRoom(ctx, x, y, width, height, owned) {
-    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 1;
+  function roomLayout(x, y, width, height) {
     const sx = Math.min((width - 24) / 11.6, (height - 16) / 9.8);
     const sy = sx * 0.52, sz = sx * 1.26;
     const ox = x + width / 2 - sx * 0.5;
     const oy = y + (height - sx * 9.73) / 2 + sz * 3;
     const project = (u, v, z) => [ox + (u - v) * sx, oy + (u + v) * sy - (z || 0) * sz];
+    // Separate touch areas share the drawing projection. The cushion includes the cat.
+    const target = (id, u, v, z, dx, dy, w, h) => {
+      const p = project(u, v, z);
+      return { id, x: p[0] + dx * sx, y: p[1] + dy * sx, w: w * sx, h: h * sx };
+    };
+    return { sx, sy, sz, project, targets: [
+      target('picture', 0.08, 3.07, 1.61, -0.95, -1.05, 1.9, 1.9),
+      target('plant', 0.83, 3.53, 0, -0.82, -1.66, 1.6, 1.85),
+      target('basket', 2.27, 3.37, 0, -0.87, -1.12, 1.9, 1.9),
+      target('cushion', 4.13, 3.15, 0.24, -0.8, -2.6, 2.65, 3.15),
+      target('lamp', 5, 0.95, 0, -0.8, -2.35, 1.9, 2.55)
+    ] };
+  }
+  function isometricRoom(ctx, x, y, width, height, owned, reaction) {
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 1;
+    const { sx, sy, sz, project } = roomLayout(x, y, width, height);
+    const elapsed = reaction ? reaction.elapsed : 0;
+    const smooth = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+    const strength = reaction ? smooth(elapsed / 450) * smooth((reaction.duration - elapsed) / 550) : 0;
+    const active = id => reaction && reaction.id === id ? strength : 0;
+    const pulse = Math.sin(elapsed / 190);
     function polygon(points, fill, edge) {
       ctx.beginPath(); points.forEach((point, index) => { if (index) ctx.lineTo(point[0], point[1]); else ctx.moveTo(point[0], point[1]); });
       ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
@@ -245,6 +277,7 @@
       const center = project(0.08, 3.07, 1.61);
       ctx.save(); ctx.translate(center[0], center[1]); ctx.transform(sx, -sy, 0, sz, 0, 0);
       icon(ctx, 5, 0, 0, 0.78); ctx.restore();
+      if (active('picture')) star(ctx, center[0] + sx * 0.7, center[1] - sx * 0.7, sx * 0.18 * strength, '#dfb85f');
     }
     // Furniture is painted from the back of the room towards the cat in front.
     if (owned.has('plant')) {
@@ -254,14 +287,21 @@
       polygon([project(u + d - inset, v + inset), project(u + d - inset, v + d - inset), project(u + d, v + d, h), project(u + d, v, h)], '#c2a17b');
       polygon([project(u, v, h), project(u + d, v, h), project(u + d, v + d, h), project(u, v + d, h)], '#ebcfaa');
       const p = project(0.83, 3.53, h);
+      ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('plant') * pulse * 0.08); ctx.translate(-p[0], -p[1]);
       stroke(ctx, [[p[0], p[1]], [p[0], p[1] - sx * 1.22]], '#789a76', 1.8);
       ellipse(ctx, p[0] - sx * 0.15, p[1] - sx * 0.56, sx * 0.14, sx * 0.3, '#88a986', -0.65);
       ellipse(ctx, p[0] + sx * 0.14, p[1] - sx * 0.86, sx * 0.14, sx * 0.28, '#a8c092', 0.65);
       ellipse(ctx, p[0] - sx * 0.09, p[1] - sx * 1.12, sx * 0.12, sx * 0.25, '#88a986', -0.4);
+      ctx.restore();
     }
     if (owned.has('lamp')) {
       const bottom = project(5.0, 0.95), top = project(5.0, 0.95, 1.43);
-      ellipse(ctx, top[0], top[1], sx * 0.72, sx * 0.78, 'rgba(240, 206, 136, 0.22)');
+      const warmth = active('lamp');
+      ellipse(ctx, top[0], top[1], sx * (0.72 + warmth * 0.6), sx * (0.78 + warmth * 0.55), 'rgba(240, 206, 136, 0.22)');
+      if (warmth) {
+        const light = project(4.6, 2.35);
+        ellipse(ctx, light[0], light[1], sx * 1.6, sy * 1.1, 'rgba(255, 223, 148, ' + warmth * 0.3 + ')');
+      }
       shadow(5.0, 0.95, 0.65, 0.43);
       stroke(ctx, [bottom, top], '#b59b74', 3);
       ellipse(ctx, bottom[0], bottom[1], sx * 0.45, sy * 0.38, '#cbb18a');
@@ -290,8 +330,24 @@
       floorRound(3.15, 2.4, 0.21, 1.98, 1.5, 0.24, '#d8a697');
       floorRound(3.27, 2.51, 0.24, 1.74, 1.28, 0.2, '#e9c1b0');
     }
-    const cat = project(4.13, 3.15, owned.has('cushion') ? 0.24 : 0.01);
-    companion(ctx, cat[0], cat[1] - sx * 0.9, sx * 2.9, true);
+    const sniff = active('plant'), play = active('basket'), pose = {
+      rest: active('cushion') * (0.96 + 0.04 * Math.sin(elapsed / 380)) + active('lamp') * 0.3,
+      reach: play * (0.65 + 0.35 * pulse), wave: active('picture') * (0.8 + 0.2 * pulse),
+      tilt: sniff * (-0.16 + 0.03 * pulse) + play * 0.06 * pulse
+    };
+    // Walk over to sniff the plant, then return along the same route.
+    const cat = project(4.13 - sniff * 2.1, 3.15 + sniff * 1.38, owned.has('cushion') ? 0.24 * (1 - sniff) : 0.01);
+    if (play) {
+      const ball = project(3.12 + 0.22 * pulse * play, 3.96, 0.14);
+      ctx.save(); ctx.globalAlpha = play;
+      ctx.translate(ball[0], ball[1]); ctx.rotate(pulse * 0.7); icon(ctx, 4, 0, 0, sx * 0.67); ctx.restore();
+    }
+    companion(ctx, cat[0], cat[1] - sx * 0.9 - sniff * Math.sin(elapsed / 140) * sx * 0.025, sx * 2.9, !play && !sniff, pose);
+    if (active('cushion')) {
+      ctx.save(); ctx.globalAlpha = strength;
+      ctx.fillStyle = '#91a084'; ctx.font = '600 ' + sx * 0.49 + 'px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('z', cat[0] + sx * 1.25, cat[1] - sx * (1.8 + elapsed % 1100 / 2200)); ctx.restore();
+    }
     ctx.restore();
   }
   function tool(ctx, name, x, y, size, color) {
@@ -329,5 +385,5 @@
     }
     ctx.closePath(); ctx.fillStyle = color; ctx.fill();
   }
-  return { INK, rounded, box, ellipse, stroke, icon, companion, plant, decoration, isometricRoom, tool, star };
+  return { INK, rounded, box, ellipse, stroke, icon, companion, plant, decoration, roomLayout, isometricRoom, tool, star };
 });
