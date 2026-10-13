@@ -1,0 +1,103 @@
+{
+  "description": "喵喵消消屋 5 关体验版",
+  "miniprogramRoot": "./",
+  "compileType": "game",
+  "appid": "wx2b599f1da3db748d",
+  "projectname": "meow-match-prototype",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": false,
+    "minifyWXML": true,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "packOptions": {
+    "ignore": [
+      {
+        "value": ".git",
+        "type": "folder"
+      },
+      {
+        "value": ".gitignore",
+        "type": "file"
+      },
+      {
+        "value": ".gitattributes",
+        "type": "file"
+      },
+      {
+        "value": "CHANGELOG.md",
+        "type": "file"
+      },
+      {
+        "value": "pages",
+        "type": "folder"
+      },
+      {
+        "value": "app.js",
+        "type": "file"
+      },
+      {
+        "value": "app.json",
+        "type": "file"
+      },
+      {
+        "value": "app.wxss",
+        "type": "file"
+      },
+      {
+        "value": "sitemap.json",
+        "type": "file"
+      },
+      {
+        "value": "node_modules",
+        "type": "folder"
+      },
+      {
+        "value": "web",
+        "type": "folder"
+      },
+      {
+        "value": "scripts",
+        "type": "folder"
+      },
+      {
+        "value": "tests",
+        "type": "folder"
+      },
+      {
+        "value": "package.json",
+        "type": "file"
+      },
+      {
+        "value": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "value": "README.md",
+        "type": "file"
+      }
+    ],
+    "include": []
+  },
+  "simulatorPluginLibVersion": {},
+  "isGameTourist": false,
+  "editorSetting": {}
+}

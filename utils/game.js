@@ -1,0 +1,285 @@
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.MeowGame = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+  const SIZE = 54;
+  const CAPACITY = 7;
+  const LEVELS = [
+    { number: 1, name: '猫咪的小屋', difficulty: '轻松 · 入门', total: 30, kinds: 6, layers: 3, lockedSlots: 0, revision: 2, seed: 20261012, note: '从熟悉的小屋开始' },
+    { number: 2, name: '窗边的午后', difficulty: '挑战 · 进阶', total: 45, kinds: 6, layers: 5, lockedSlots: 1, revision: 4, seed: 20269956, note: '先看第三张，再动手' },
+    { number: 3, name: '毛线小角落', difficulty: '困难 · 深层', total: 48, kinds: 7, layers: 6, lockedSlots: 1, revision: 4, seed: 20262294, note: '多留一个空位' },
+    { number: 4, name: '猫爪小花园', difficulty: '困难 · 规划', total: 54, kinds: 8, layers: 7, lockedSlots: 2, revision: 4, seed: 20262877, note: '藏在下面的，才是关键' },
+    { number: 5, name: '暖暖猫咪窝', difficulty: '极难 · 挑战', total: 60, kinds: 8, layers: 8, lockedSlots: 2, revision: 4, seed: 20262199, note: '一步一步，揭开猫咪窝' }
+  ];
+  const TYPES = [
+    { name: '橘猫', color: '#f5b66b', bg: '#fff0d9' },
+    { name: '奶牛猫', color: '#616d69', bg: '#eaf0ec' },
+    { name: '白猫', color: '#e7c9a5', bg: '#f5eadb' },
+    { name: '小鱼', color: '#75aaa8', bg: '#e0f2ef' },
+    { name: '毛线球', color: '#c38cab', bg: '#f7e5ef' },
+    { name: '猫爪', color: '#b59bc6', bg: '#efe6f6' },
+    { name: '铃铛', color: '#d3aa58', bg: '#fff1d0' },
+    { name: '猫碗', color: '#83a6c7', bg: '#e3eef7' }
+  ];
+  function random(seed) {
+    let value = seed >>> 0;
+    return function () {
+      value += 0x6D2B79F5;
+      let n = Math.imul(value ^ value >>> 15, 1 | value);
+      n ^= n + Math.imul(n ^ n >>> 7, 61 | n);
+      return ((n ^ n >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function overlaps(a, b) {
+    return a.x < b.x + SIZE && a.x + SIZE > b.x &&
+      a.y < b.y + SIZE && a.y + SIZE > b.y;
+  }
+  function levelCapacity(level) {
+    const locks = Number.isInteger(level.lockedSlots) ? Math.max(0, Math.min(CAPACITY - 3, level.lockedSlots)) : 0;
+    return CAPACITY - locks;
+  }
+  function mixedKinds(total, kindCount, number, rng, capacity) {
+    const groups = total / 3;
+    const left = Array.from({ length: kindCount }, (_, kind) => 3 * (Math.floor(groups / kindCount) + (kind < groups % kindCount ? 1 : 0)));
+    const held = Array(kindCount).fill(0), result = [];
+    const desired = Math.min(6, number + 2);
+    while (result.length < total) {
+      const size = held.reduce((sum, count) => sum + count, 0);
+      const active = held.filter(Boolean).length;
+      const choices = [];
+      for (let kind = 0; kind < kindCount; kind++) {
+        if (!left[kind]) continue;
+        const next = held.slice(); next[kind] = (next[kind] + 1) % 3;
+        const nextSize = next.reduce((sum, count) => sum + count, 0);
+        // At the last free position, keep a pair so a third tile can still clear it.
+        if (nextSize >= capacity || (nextSize === capacity - 1 && next.every(count => count < 2))) continue;
+        let weight;
+        if (held[kind] === 2) weight = size >= capacity - 2 ? 12 : (number === 2 ? 3 : 0.5);
+        else if (held[kind] === 1) weight = number === 2 ? 6 : 3;
+        else weight = active < desired ? 4 + number * 2 : 1;
+        choices.push({ kind, weight });
+      }
+      let draw = rng() * choices.reduce((sum, choice) => sum + choice.weight, 0);
+      let chosen = choices[choices.length - 1].kind;
+      for (const choice of choices) { draw -= choice.weight; if (draw < 0) { chosen = choice.kind; break; } }
+      result.push(chosen); left[chosen]--; held[chosen] = (held[chosen] + 1) % 3;
+    }
+    return result;
+  }
+  function createLevel(seed, number) {
+    number = number == null ? 1 : number;
+    const info = LEVELS[number - 1];
+    if (!Number.isInteger(number) || !info) throw new RangeError('关卡编号必须在 1 到 5 之间');
+    seed = seed == null ? info.seed : seed;
+    const tiles = [];
+    function add(x, y, layer) {
+      tiles.push({ id: tiles.length, x, y, layer, kind: 0, blockers: [] });
+    }
+    if (number > 1) {
+      const center = [];
+      for (let row = 0; row < 3; row++) for (let col = 0; col < 3; col++) center.push([60 + col * 60, 60 + row * 60]);
+      const base = [[0, 0], [240, 0], [0, 240], [240, 240]].concat(center);
+      const base12 = base.filter(p => p[0] !== 120 || p[1] !== 120);
+      const shifted = [[30, 30], [210, 30], [30, 210], [210, 210],
+        [90, 90], [150, 90], [90, 150], [150, 150], [30, 90], [210, 90], [30, 150], [210, 150]];
+      const corners = [[60, 60], [180, 60], [60, 180], [180, 180]];
+      const cross = [[60, 60], [180, 60], [120, 120], [60, 180], [180, 180]];
+      const inner = [[90, 90], [150, 90], [90, 150], [150, 150]];
+      const seven = center.filter(p => !(p[0] === 120 && (p[1] === 120 || p[1] === 180)));
+      const staggered = [[90, 30], [30, 150], [150, 90], [90, 210], [210, 150]];
+      const layouts = {
+        2: [base, shifted, center, shifted.slice(0, 7), corners],
+        3: [base12, shifted.slice(0, 10), center, shifted.slice(0, 8), cross, inner],
+        4: [base12, shifted.slice(0, 10), center, shifted.slice(0, 8), seven, staggered, [[60, 60], [180, 120], [60, 180]]],
+        5: [base12, shifted.slice(0, 11), center.concat([[0, 120]]), shifted.slice(0, 9), seven, staggered, corners, [[90, 90], [150, 150]]]
+      };
+      layouts[number].forEach((points, layer) => points.forEach(p => add(p[0], p[1], layer)));
+    } else {
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 5; col++) {
+          if (Math.abs(row - 2) + Math.abs(col - 2) > 2) continue;
+          add(col * 60, row * 60, 0);
+        }
+      }
+      for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 4; col++) {
+          if ((row === 0 || row === 3) && (col === 0 || col === 3)) continue;
+          add(30 + col * 60, 30 + row * 60, 1);
+        }
+      }
+      [[60, 60], [180, 60], [120, 120], [60, 180], [180, 180]].forEach(p => add(p[0], p[1], 2));
+    }
+    tiles.forEach(tile => {
+      tile.blockers = tiles.filter(other => other.layer > tile.layer && overlaps(tile, other))
+        .map(other => other.id);
+    });
+    // First choose a legal removal order; then assign a sequence that never fills the tray.
+    // This removal order is also a certificate that the fixed level can be completed.
+    const rng = random(seed);
+    const alive = tiles.map(() => true);
+    const solution = [];
+    while (solution.length < tiles.length) {
+      const available = tiles.filter(tile => alive[tile.id] && tile.blockers.every(id => !alive[id]));
+      const selected = available[Math.floor(rng() * available.length)];
+      alive[selected.id] = false;
+      solution.push(selected.id);
+    }
+    const batches = [[0, 3, 1], [2, 5, 4], [1, 4, 0], [3, 2, 5]];
+    const kinds = [];
+    if (number === 1) {
+      batches.slice(0, 3).forEach(([a, b, c]) => kinds.push(a, b, a, c, b, a, c, b, c));
+      kinds.push(2, 2, 2);
+    } else kinds.push.apply(kinds, mixedKinds(tiles.length, info.kinds, number, rng, levelCapacity(info)));
+    solution.forEach((id, i) => { tiles[id].kind = kinds[i]; });
+    return Object.assign({}, info, { tiles, solution, seed });
+  }
+  function createCampaignLevel(number, seed) { return createLevel(seed, number); }
+  const TOOL_LIMITS = { undo: 3, hint: 1 };
+  class Game {
+    constructor(level) {
+      this.level = level || createLevel();
+      this.reset();
+    }
+    reset() {
+      this.alive = this.level.tiles.map(() => true);
+      this.tray = [];
+      this.status = 'playing';
+      this.matches = 0;
+      this.steps = 0;
+      this.history = [];
+      this.moves = [];
+      this.toolsUsed = { undo: 0, hint: 0 };
+      this.unlockedSlots = 0;
+    }
+    get capacity() { return levelCapacity(this.level) + this.unlockedSlots; }
+    get lockedSlots() { return CAPACITY - this.capacity; }
+    // Future rewarded-ad callbacks may grant one slot. No player control grants it yet.
+    unlockSlot() {
+      if (!this.lockedSlots || this.status === 'won') return false;
+      this.unlockedSlots++;
+      if (this.status === 'lost' && this.tray.length < this.capacity) this.status = 'playing';
+      return true;
+    }
+    isAvailable(id) {
+      const tile = this.level.tiles[id];
+      return !!tile && this.alive[id] && tile.blockers.every(other => !this.alive[other]);
+    }
+    available() { return this.level.tiles.filter(tile => this.isAvailable(tile.id)); }
+    remaining() { return this.alive.filter(Boolean).length; }
+    pick(id) {
+      if (this.status !== 'playing') return { ok: false, reason: 'finished' };
+      if (!this.isAvailable(id)) return { ok: false, reason: 'blocked' };
+      this.history.push({ alive: this.alive.slice(), tray: this.tray.slice(),
+        status: this.status, matches: this.matches, steps: this.steps });
+      const tile = this.level.tiles[id];
+      const previousTray = this.tray.slice();
+      let index = this.tray.length;
+      for (let i = 0; i < this.tray.length; i++) {
+        if (this.tray[i].kind === tile.kind) index = i + 1;
+      }
+      this.alive[id] = false;
+      this.tray.splice(index, 0, tile);
+      this.steps++;
+      this.moves.push(id);
+      const insertedTray = this.tray.slice();
+      const matching = this.tray.filter(other => other.kind === tile.kind);
+      const matched = matching.length === 3;
+      if (matched) {
+        this.tray = this.tray.filter(other => other.kind !== tile.kind);
+        this.matches++;
+      }
+      // Resolve a match before checking capacity: a triple in the last usable slot is legal.
+      if (this.remaining() === 0 && this.tray.length === 0) this.status = 'won';
+      else if (this.tray.length >= this.capacity) this.status = 'lost';
+      return { ok: true, tile, index, previousTray, insertedTray, matched,
+        matchedIds: matched ? matching.map(other => other.id) : [], status: this.status };
+    }
+    remainingTools(name) { return Math.max(0, TOOL_LIMITS[name] - this.toolsUsed[name]); }
+    undo() {
+      if (!this.remainingTools('undo')) return false;
+      const previous = this.history.pop();
+      if (!previous) return false;
+      this.alive = previous.alive;
+      this.tray = previous.tray;
+      this.status = previous.status;
+      this.matches = previous.matches;
+      this.steps = previous.steps;
+      this.moves.pop();
+      this.toolsUsed.undo++;
+      return true;
+    }
+    hint() {
+      if (!this.remainingTools('hint')) return null;
+      const route = this.solve();
+      if (route && route.length) this.toolsUsed.hint++;
+      return route;
+    }
+    static fromMoves(level, moves, unlockedSlots) {
+      if (!Array.isArray(moves) || moves.length > level.tiles.length) throw new Error('存档取牌记录无效');
+      const game = new Game(level);
+      const slots = unlockedSlots == null ? 0 : unlockedSlots;
+      if (!Number.isInteger(slots) || slots < 0 || slots > CAPACITY - levelCapacity(level)) throw new Error('存档解锁槽位无效');
+      game.unlockedSlots = slots;
+      for (const id of moves) {
+        if (!Number.isInteger(id) || !game.pick(id).ok) throw new Error('存档取牌顺序无效');
+      }
+      return game;
+    }
+    // Try the known route first, then search from the player's actual position.
+    solve(nodeLimit) {
+      if (this.status !== 'playing') return null;
+      const planned = this.level.solution.filter(id => this.alive[id]);
+      const probe = new Game(this.level);
+      probe.unlockedSlots = this.unlockedSlots;
+      probe.alive = this.alive.slice();
+      probe.tray = this.tray.slice();
+      let valid = true;
+      for (const id of planned) {
+        if (!probe.pick(id).ok || probe.status === 'lost') { valid = false; break; }
+      }
+      if (valid && probe.status === 'won') return planned;
+      const tiles = this.level.tiles;
+      const counts = TYPES.map((_, kind) => this.tray.filter(tile => tile.kind === kind).length);
+      const capacity = this.capacity;
+      let lo = 0, hi = 0;
+      this.alive.forEach((alive, id) => {
+        if (alive) { if (id < 32) lo = (lo | (1 << id)) >>> 0; else hi |= 1 << (id - 32); }
+      });
+      const masks = tiles.map(tile => {
+        let low = 0, high = 0;
+        tile.blockers.forEach(id => { if (id < 32) low = (low | (1 << id)) >>> 0; else high |= 1 << (id - 32); });
+        return [low, high];
+      });
+      const dead = new Set();
+      let visited = 0;
+      const limit = nodeLimit == null ? 60000 : nodeLimit;
+      function search(low, high, held) {
+        if (++visited > limit) return null;
+        if (!low && !high) return held.every(n => n === 0) ? [] : null;
+        const key = low + ':' + high + ':' + held.join('');
+        if (dead.has(key)) return null;
+        const available = tiles.filter(tile => {
+          const exists = tile.id < 32 ? (low & (1 << tile.id)) !== 0 : (high & (1 << (tile.id - 32))) !== 0;
+          return exists && !(low & masks[tile.id][0]) && !(high & masks[tile.id][1]);
+        });
+        available.sort((a, b) => held[b.kind] - held[a.kind] || b.layer - a.layer || a.id - b.id);
+        for (const tile of available) {
+          const next = held.slice();
+          next[tile.kind] = (next[tile.kind] + 1) % 3;
+          if (next.reduce((sum, n) => sum + n, 0) >= capacity) continue;
+          const nextLo = tile.id < 32 ? (low & ~(1 << tile.id)) >>> 0 : low;
+          const nextHi = tile.id < 32 ? high : high & ~(1 << (tile.id - 32));
+          const tail = search(nextLo, nextHi, next);
+          if (tail) return [tile.id].concat(tail);
+          if (visited > limit) return null;
+        }
+        dead.add(key);
+        return null;
+      }
+      return search(lo, hi, counts);
+    }
+  }
+  return { Game, createLevel, createCampaignLevel, LEVELS, TYPES, SIZE, CAPACITY, TOOL_LIMITS, levelCapacity };
+});

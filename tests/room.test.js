@@ -1,0 +1,91 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { Progress, KEY, DECORATIONS } = require('../utils/progress');
+const { GameView } = require('../utils/view');
+function memory(initial) {
+  const values = new Map(initial == null ? [] : [[KEY, JSON.stringify(initial)]]);
+  return { read: key => values.get(key), write: (key, value) => values.set(key, value) };
+}
+function win(view) {
+  view.game.level.solution.forEach(id => { view.pick(id); view.animation = null; });
+  assert.equal(view.game.status, 'won');
+}
+test('首次通关才获得对应装饰，五关奖励自动保存且重玩不会重复发放', () => {
+  const storage = memory(), view = new GameView({ ctx: {}, storage });
+  assert.deepEqual(view.progress.decorations(), []);
+  assert.equal(view.progress.nextDecoration().id, 'cushion');
+  view.press('resume');
+  for (let number = 1; number <= 5; number++) {
+    view.pick(view.game.level.solution[0]); view.animation = null;
+    assert.equal(view.progress.decorations().length, number - 1);
+    assert.equal(view.newDecoration, null);
+    view.game.level.solution.slice(1).forEach(id => { view.pick(id); view.animation = null; });
+    assert.equal(view.game.status, 'won');
+    assert.equal(view.newDecoration.id, DECORATIONS[number - 1].id);
+    const restored = new Progress(storage);
+    assert.deepEqual(restored.decorations(), DECORATIONS.slice(0, number));
+    assert.equal(restored.nextDecoration(), DECORATIONS[number] || null);
+    if (number < 5) view.press('next');
+  }
+  view.press('restart'); assert.equal(view.newDecoration, null);
+  win(view); assert.equal(view.newDecoration, null);
+  assert.equal(new Progress(storage).decorations().length, 5);
+});
+test('旧存档按有效通关记录补齐装饰，保留正在玩的局面、道具和声音', () => {
+  const original = new Progress(memory()), first = original.gameFor(1);
+  first.level.solution.forEach(id => first.pick(id)); original.save(first);
+  const second = original.gameFor(2); second.pick(second.level.solution[0]);
+  second.hint(); original.save(second, false);
+  const old = JSON.parse(original.storage.read(KEY));
+  const restored = new Progress(memory(old));
+  assert.equal(restored.decorations()[0].id, 'cushion');
+  assert.equal(restored.nextDecoration().id, 'basket');
+  assert.equal(restored.gameFor(2).steps, 1);
+  assert.equal(restored.gameFor(2).remainingTools('hint'), 0);
+  assert.equal(restored.state.sound, false);
+});
+test('失败、重来和查看小屋不会错误发放奖励或修改原局', () => {
+  const storage = memory(), view = new GameView({ ctx: {}, storage }); view.press('resume');
+  while (view.game.status === 'playing') {
+    const held = Array(8).fill(0); view.game.tray.forEach(tile => held[tile.kind]++);
+    const tiles = view.game.available().sort((a, b) => held[a.kind] - held[b.kind]);
+    view.pick((tiles.find(tile => held[tile.kind] < 2) || tiles[0]).id); view.animation = null;
+  }
+  assert.equal(view.game.status, 'lost'); assert.deepEqual(view.progress.decorations(), []);
+  const saved = storage.read(KEY), moves = view.game.moves.slice();
+  view.press('levels'); view.press('room');
+  assert.equal(view.modal, 'room');
+  assert.deepEqual(view.controls().map(item => item.action), ['close']);
+  view.pointer(view.offsetX + 195 * view.scale, view.offsetY + 715 * view.scale);
+  assert.equal(view.modal, null); assert.equal(view.screen, 'levels');
+  assert.equal(storage.read(KEY), saved); assert.deepEqual(view.game.moves, moves);
+  view.press('resume'); view.press('restart'); assert.deepEqual(view.progress.decorations(), []);
+});
+test('坏局面不丢失已得装饰，无效或跳关的通关记录不会解锁装饰', () => {
+  const progress = new Progress(memory({ version: 1, completed: [1, 2, 4, 99], runs: { 1: [999], 3: [0, 0] } }));
+  assert.deepEqual(progress.decorations().map(item => item.id), ['cushion', 'basket']);
+  assert.equal(progress.nextDecoration().number, 3);
+  assert.equal(progress.gameFor(3).steps, 0);
+  assert.deepEqual(new Progress(memory({ version: 1, completed: [5] })).decorations(), []);
+});
+test('通关后可查看小屋、返回结算并进入下一关，集齐后主按钮打开小屋', () => {
+  const view = new GameView({ ctx: {}, storage: memory() }); view.press('resume'); win(view);
+  assert.ok(view.controls().some(item => item.action === 'room'));
+  view.press('room'); view.press('close');
+  assert.equal(view.screen, 'game'); assert.equal(view.game.status, 'won');
+  view.press('next'); assert.equal(view.game.level.number, 2); assert.equal(view.modal, null);
+  for (let number = 2; number <= 5; number++) { win(view); if (number < 5) view.press('next'); }
+  assert.deepEqual(view.controls().map(item => item.action), ['finish', 'restart', 'levels']);
+  view.press('finish'); assert.equal(view.screen, 'levels'); assert.equal(view.modal, 'room');
+  view.press('close'); assert.equal(view.progress.nextDecoration(), null);
+  assert.equal(view.resumeLabel(), '再陪小猫玩一局');
+});
+test('无法写入存储时奖励在本次游戏仍可显示，页面提示保存失败', () => {
+  const view = new GameView({ ctx: {}, storage: { write() { throw new Error('quota'); } } });
+  view.press('resume'); win(view);
+  assert.equal(view.progress.decorations().length, 1);
+  assert.equal(view.newDecoration.id, 'cushion');
+  assert.match(view.toast.message, /进度暂时无法保存/);
+  view.press('next'); assert.equal(view.progress.decorations().length, 1);
+});
