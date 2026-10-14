@@ -14,7 +14,12 @@
     basket: { label: '陪小猫玩毛线球', message: '抓到啦！再陪我玩一会儿～', duration: 3000 },
     plant: { label: '让小猫闻闻绿植', message: '闻一闻，是窗边清新的味道～', duration: 3400 },
     picture: { label: '和小猫一起举爪', message: '这是我的小爪印，和你击个掌！', duration: 2800 },
-    lamp: { label: '陪小猫享受暖光', message: '灯光暖暖的，有你在真好～', duration: 3200 }
+    lamp: { label: '陪小猫享受暖光', message: '灯光暖暖的，有你在真好～', duration: 3200 },
+    mat: { label: '陪小猫晒晒太阳', message: '阳光落在肚皮上，暖洋洋的～', duration: 3400 },
+    can: { label: '和小猫看看小水滴', message: '滴答，伸出小爪接住啦！', duration: 3000 },
+    flowers: { label: '让小猫闻闻雏菊', message: '花开啦，今天也有好心情～', duration: 3400 },
+    chime: { label: '和小猫听听风铃', message: '风轻轻来了，我也挥挥爪～', duration: 2800 },
+    stand: { label: '陪小猫看看花架', message: '每一盆绿意，都有自己的小家啦～', duration: 3200 }
   };
   function text(ctx, value, x, y, size, color, weight, align) {
     ctx.font = (weight || '400') + ' ' + size + 'px "PingFang SC", "Microsoft YaHei", sans-serif';
@@ -26,6 +31,8 @@
       this.ctx = options.ctx;
       this.progress = new Saved.Progress(options.storage);
       this.game = this.progress.gameFor(this.progress.resumeNumber());
+      this.chapter = Core.chapterFor(this.game.level.number).number;
+      this.roomChapter = this.chapter;
       this.screen = 'levels';
       this.playSound = options.playSound || function () {};
       this.onChange = options.onChange || function () {};
@@ -61,6 +68,9 @@
       this.onChange(this);
     }
     audio(name) { if (this.sound) this.playSound(name); }
+    chapterInfo(number) { return Core.CHAPTERS.find(item => item.number === (number == null ? this.chapter : number)); }
+    chapterLevels() { const chapter = this.chapterInfo(); return Core.LEVELS.slice(chapter.first - 1, chapter.last); }
+    roomDecorations() { return this.progress.decorations(this.roomChapter); }
     clearRoom() { this.roomReaction = null; this.roomArrival = null; this.roomGift = null; }
     reset() {
       this.game.reset(); this.animation = null; this.hintId = null; this.modal = null;
@@ -71,11 +81,13 @@
       const game = this.progress.gameFor(number, fresh);
       if (!game) return;
       this.game = game; this.screen = 'game'; this.animation = null; this.hintId = null;
+      this.chapter = Core.chapterFor(number).number;
       this.newDecoration = null; this.pendingArrival = null; this.clearRoom();
       this.modal = null; this.toast = null; this.startedAt = Date.now(); this.notify(true);
     }
     showLevels() {
       this.screen = 'levels'; this.animation = null; this.hintId = null; this.modal = null;
+      this.chapter = Core.chapterFor(this.game.level.number).number;
       this.pendingArrival = null; this.clearRoom(); this.notify();
     }
     nextLevel() {
@@ -122,6 +134,8 @@
     openRoom() {
       if (this.roomArrival) return;
       this.clearRoom(); this.modal = 'room';
+      this.roomChapter = this.pendingArrival ? Core.chapterFor(this.pendingArrival.number).number :
+        this.screen === 'game' ? Core.chapterFor(this.game.level.number).number : this.chapter;
       if (this.pendingArrival && this.game.status === 'won' && !this.animation) {
         this.roomGift = this.pendingArrival;
         // The reward was saved on winning. This ceremony is only a transient presentation.
@@ -143,7 +157,7 @@
       ];
     }
     interactFurniture(id) {
-      const item = this.progress.decorations().find(item => item.id === id);
+      const item = this.roomDecorations().find(item => item.id === id);
       if (this.modal !== 'room' || !item || this.roomArrival) return;
       const now = Date.now();
       // One short response at a time; repeated taps never queue sounds or animations.
@@ -152,6 +166,11 @@
       this.audio('tap'); this.notify();
     }
     press(action) {
+      if (action.indexOf('chapter-') === 0) {
+        const number = Number(action.slice(8));
+        if (this.screen === 'levels' && !this.modal && this.chapterInfo(number)) { this.chapter = number; this.notify(); }
+        return;
+      }
       if (action === 'bring-home') { if (this.pendingArrival && !this.animation && this.game.status === 'won') this.openRoom(); return; }
       if (action === 'skip-arrival') { this.skipArrival(); return; }
       if (action.indexOf('furniture-') === 0) { this.interactFurniture(action.slice(10)); return; }
@@ -173,12 +192,12 @@
     controls() {
       if (this.modal === 'help') return [{ action: 'close', label: '知道啦，开始收拾', x: 67, y: 535, w: 256, h: 46 }];
       if (this.modal === 'room') {
-        const owned = this.progress.decorations(), disabled = !!(this.roomReaction || this.roomArrival);
+        const owned = this.roomDecorations(), disabled = !!(this.roomReaction || this.roomArrival);
         const targets = Art.roomLayout(ROOM.x, ROOM.y, ROOM.w, ROOM.h).targets;
-        return owned.map(item => Object.assign({}, targets.find(target => target.id === item.id), {
+        return owned.map(item => Object.assign({}, targets.find(target => target.id === (item.spot || item.id)), {
           action: 'furniture-' + item.id, label: '点击' + item.name + '，' + REACTIONS[item.id].label, disabled
         })).concat(owned.map(item => ({ action: 'collection-' + item.id,
-          label: item.name + '，' + REACTIONS[item.id].label, x: 42, y: 449 + (item.number - 1) * 44, w: 306, h: 38, disabled })),
+          label: item.name + '，' + REACTIONS[item.id].label, x: 42, y: 449 + (item.number - this.chapterInfo(this.roomChapter).first) * 44, w: 306, h: 38, disabled })),
         this.roomExitControls());
       }
       const common = [
@@ -186,10 +205,11 @@
         { action: 'help', label: '玩法说明', x: 341, y: 17, w: 34, h: 34 }
       ];
       if (this.screen === 'levels') {
-        return common.concat(Core.LEVELS.map(level => ({ action: 'level-' + level.number,
+        return common.concat(this.chapterLevels().map((level, index) => ({ action: 'level-' + level.number,
           label: '第' + level.number + '关：' + level.name + (this.progress.isComplete(level.number) ? '，已通关，已获得' : this.progress.canOpen(level.number) ? '，可挑战，通关奖励' : '，未解锁，通关奖励') + Saved.DECORATIONS[level.number - 1].name,
-          x: 25, y: 306 + (level.number - 1) * 77, w: 340, h: 66, disabled: !this.progress.canOpen(level.number) })),
-          [{ action: 'room', label: '看看我的小屋，已收集 ' + this.progress.decorations().length + ' / 5 件装饰', x: 250, y: 214, w: 115, h: 34 },
+          x: 25, y: 306 + index * 77, w: 340, h: 66, disabled: !this.progress.canOpen(level.number) })),
+          Core.CHAPTERS.map((chapter, index) => ({ action: 'chapter-' + chapter.number, label: chapter.name + '，第 ' + chapter.first + ' 至 ' + chapter.last + ' 关' + (this.progress.canOpen(chapter.first) ? '' : '，通过第 ' + (chapter.first - 1) + ' 关开启'), x: 25 + index * 112, y: 214, w: 106, h: 34 })),
+          [{ action: 'room', label: '看看我的小屋，' + this.chapterInfo().name + '，已收集 ' + this.progress.decorations(this.chapter).length + ' / 5 件装饰', x: 250, y: 214, w: 115, h: 34 },
             { action: 'resume', label: this.resumeLabel(), x: 25, y: 712, w: 340, h: 50 }]);
       }
       if (this.game.status !== 'playing' && !this.animation) {
@@ -254,7 +274,9 @@
     }
     drawRoomScene(now) {
       const ctx = this.ctx;
-      const owned = new Set(this.progress.decorations().map(item => item.id));
+      const chapter = this.screen === 'levels' ? this.chapter : Core.chapterFor(this.game.level.number).number;
+      const owned = new Set(this.progress.decorations(chapter).map(item => item.id));
+      const garden = chapter === 2;
       Art.box(ctx, 104, 90, 98, 89, 30, '#e7eee0');
       Art.box(ctx, 112, 98, 82, 73, 24, '#f7f5e6');
       ctx.save(); Art.rounded(ctx, 116, 102, 74, 65, 21); ctx.clip();
@@ -264,11 +286,11 @@
       ctx.restore();
       Art.box(ctx, 98, 176, 110, 8, 3, '#dbcdb1');
       Art.box(ctx, 84, 163, 9, 24, 2, '#c7ba9d'); Art.box(ctx, 94, 167, 8, 20, 2, '#a5bca1');
-      if (owned.has('picture')) Art.decoration(ctx, 'picture', 57, 115, 43);
-      if (owned.has('plant')) Art.decoration(ctx, 'plant', 54, 169, 47);
-      if (owned.has('basket')) Art.decoration(ctx, 'basket', 214, 167, 46);
-      if (owned.has('lamp')) Art.decoration(ctx, 'lamp', 342, 155, 43);
-      if (owned.has('cushion')) Art.decoration(ctx, 'cushion', 276, 178, 86);
+      const furniture = garden ? ['chime', 'flowers', 'can', 'stand', 'mat'] : ['picture', 'plant', 'basket', 'lamp', 'cushion'];
+      [[57, 115, 43], [54, 169, 47], [214, 167, 46], [342, 155, 43], [276, 178, 86]].forEach((position, index) => {
+        if (owned.has(furniture[index])) Art.decoration(ctx, furniture[index], ...position);
+      });
+      if (garden) { Art.ellipse(ctx, 143, 120, 10, 10, '#f2deb1'); Art.star(ctx, 342, 95, 5, '#dfc482'); }
       const bounce = Math.sin(now / 1050) * 1.3;
       Art.companion(ctx, 276, 153 + bounce, 84, this.game.matches > 0 || owned.size > 0);
       Art.ellipse(ctx, 345, 184, 5, 4, '#dbc39b');
@@ -415,16 +437,20 @@
       ctx.restore();
     }
     drawLevels(now) {
-      const ctx = this.ctx, completed = this.progress.state.completed.length;
-      const next = this.progress.nextDecoration();
-      text(ctx, '小屋慢慢变温暖', 25, 233, 20, INK, '600');
+      const ctx = this.ctx, completed = this.progress.decorations(this.chapter).length;
+      const next = this.progress.nextDecoration(this.chapter);
+      Core.CHAPTERS.forEach((chapter, index) => {
+        const selected = chapter.number === this.chapter;
+        Art.box(ctx, 25 + index * 112, 214, 106, 34, 12, selected ? '#789970' : '#eeefdf');
+        text(ctx, chapter.name, 78 + index * 112, 231, 12, selected ? '#fffdf3' : '#87977d', '600', 'center');
+      });
       Art.box(ctx, 250, 214, 115, 34, 12, '#e6edda', '#d6e1c8');
       text(ctx, '我的小屋 ' + completed + '/5 ›', 307.5, 231, 11, '#678460', '600', 'center');
-      text(ctx, next ? '下一件心意 · ' + next.name : '五件心意，都摆进小屋啦', 25, 271, 12, '#8b9b7c');
+      text(ctx, !this.progress.canOpen(this.chapterInfo().first) ? '通过第 ' + (this.chapterInfo().first - 1) + ' 关，开启阳光花房' : next ? '下一件心意 · ' + next.name : '五件心意，都摆进小屋啦', 25, 271, 12, '#8b9b7c');
       Art.box(ctx, 247, 268, 118, 5, 2.5, '#e3e6d5');
       if (completed) Art.box(ctx, 247, 268, 118 * completed / 5, 5, 2.5, '#88ab83');
       const resume = this.progress.resumeNumber();
-      Core.LEVELS.forEach((level, index) => {
+      this.chapterLevels().forEach((level, index) => {
         const y = 306 + index * 77;
         const unlocked = this.progress.canOpen(level.number), done = this.progress.isComplete(level.number);
         const selected = level.number === resume;
@@ -441,7 +467,7 @@
         else if (this.progress.hasActiveRun(level.number)) note = moves.length ? '已取 ' + moves.length + ' 张 · 点这里继续' : '牌局已保留 · 点这里继续';
         else if (done) note = level.total + ' 张 · ' + level.kinds + ' 种 · ' + level.layers + ' 层 · 可重玩';
         text(ctx, note, 103, y + 35, 10, unlocked ? '#95a181' : '#afb69e');
-        text(ctx, (done ? '已摆放 · ' : '通关奖励 · ') + Saved.DECORATIONS[index].name, 103, y + 53, 11, done ? '#b59669' : '#8f9e83');
+        text(ctx, (done ? '已摆放 · ' : '通关奖励 · ') + Saved.DECORATIONS[level.number - 1].name, 103, y + 53, 11, done ? '#b59669' : '#8f9e83');
         if (done) Art.star(ctx, 338, y + 27, 7, '#d8b265');
         else if (unlocked) Art.stroke(ctx, [[334, y + 27], [340, y + 33], [334, y + 39]], '#93a47f', 1.6);
         else {
@@ -456,19 +482,19 @@
       text(ctx, completed === 5 ? '小屋装满心意，谢谢你呀' : '每过一关，给小猫添一件小物', 195, 807, 10, '#b0b69f', '400', 'center');
     }
     drawCollection(now) {
-      const ctx = this.ctx, owned = this.progress.decorations(), next = this.progress.nextDecoration();
+      const ctx = this.ctx, owned = this.roomDecorations(), next = this.progress.nextDecoration(this.roomChapter);
       this.overlay(23, 98, 344, 687);
-      text(ctx, this.roomGift ? '新家具到家啦' : '我们的小屋', 48, 134, 22, INK, '700');
+      text(ctx, this.roomGift ? '新家具到家啦' : this.chapterInfo(this.roomChapter).name, 48, 134, 22, INK, '700');
       Art.box(ctx, 280, 119, 60, 28, 14, '#e8eedc');
       text(ctx, owned.length + ' / 5', 310, 133, 12, '#75916a', '600', 'center');
       text(ctx, this.roomGift ? this.roomGift.name + '，让小屋又暖了一点' : '一点点收拾，一点点变成喜欢的样子', 48, 163, 12, '#8c9a80');
       const reaction = this.roomReaction, arrival = this.roomArrival;
       Art.isometricRoom(ctx, ROOM.x, ROOM.y, ROOM.w, ROOM.h, new Set(owned.map(item => item.id)),
         reaction && { id: reaction.id, elapsed: Math.max(0, now - reaction.start), duration: reaction.duration },
-        arrival && { id: arrival.id, elapsed: Math.max(0, now - arrival.start), landAt: arrival.landAt });
+        arrival && { id: arrival.id, elapsed: Math.max(0, now - arrival.start), landAt: arrival.landAt }, this.chapterInfo(this.roomChapter).theme);
       if (reaction || arrival) Art.box(ctx, 47, 416, 296, 25, 12, '#f4eedc');
       text(ctx, reaction ? reaction.message : arrival ? '轻轻放好，给小猫一个小惊喜～' : owned.length ? '点点家具或下方小卡，看看小猫的回应' : '小猫等着和你一起，把家布置得暖暖的', 195, 429, 11, reaction || arrival ? '#8a785b' : '#899979', '400', 'center');
-      Saved.DECORATIONS.forEach((item, index) => {
+      Saved.chapterDecorations(this.roomChapter).forEach((item, index) => {
         const y = 449 + index * 44, collected = this.progress.isComplete(item.number);
         const responding = (reaction && reaction.id === item.id) || (arrival && arrival.id === item.id);
         Art.box(ctx, 42, y, 306, 38, 10, responding ? '#f1e6cd' : collected ? '#edf1df' : '#f5f4e9', responding ? '#d8c197' : null);
@@ -514,7 +540,7 @@
       this.overlay(37, 217, 316, won ? 418 : 444);
       Art.companion(ctx, 195, 309, 112, won);
       if (won) [-1, 0, 1].forEach((v, i) => Art.star(ctx, 195 + v * 39, 239 - (i === 1 ? 8 : 0), 13, '#e9bc68'));
-      text(ctx, won ? (last ? '五间小屋都收拾好啦！' : '小屋收拾好啦！') : '小窝有点挤啦', 195, 381, last && won ? 20 : 22, INK, '700', 'center');
+      text(ctx, won ? (last ? '两间小屋都收拾好啦！' : level.number === 5 ? '客厅完成，花房开启！' : '小屋收拾好啦！') : '小窝有点挤啦', 195, 381, last && won ? 20 : 22, INK, '700', 'center');
       text(ctx, won ? (this.pendingArrival ? '给小猫的新心意，一起带回家吧' : this.newDecoration ? '给小猫的新心意，已经摆进小屋啦' : '熟悉的小屋，又收拾好了一次') : '没关系，换个顺序再试试喵', 195, 419, 12, '#8c9a80', '400', 'center');
       if (won) {
         const reward = Saved.DECORATIONS[level.number - 1];

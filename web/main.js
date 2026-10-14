@@ -47,10 +47,12 @@
       const next = continuation || Array.from(targets.values()).find(button => !button.disabled); if (next) next.focus({ preventScroll: true });
     }
     const menu = view.screen === 'levels';
-    status.textContent = menu ? '选关页，已通关 ' + view.progress.state.completed.length + ' / 5 关，已解锁 ' + view.progress.unlocked() + ' 关。' : view.game.status === 'won' ? '第 ' + view.game.level.number + ' 关过关啦！小屋收拾好啦。' : view.game.status === 'lost' ?
+    status.textContent = menu ? '选关页，已通关 ' + view.progress.state.completed.length + ' / ' + MeowGame.LEVELS.length + ' 关，已解锁 ' + view.progress.unlocked() + ' 关。' : view.game.status === 'won' ? '第 ' + view.game.level.number + ' 关过关啦！小屋收拾好啦。' : view.game.status === 'lost' ?
       (view.game.remainingTools('undo') ? '暂存槽已满，可以撤回或重新开始。' : '暂存槽已满，撤回次数已用完，可重新开始。') :
       '棋盘剩余 ' + view.game.remaining() + ' 张，小窝 ' + view.game.tray.length + ' / ' + view.game.capacity + ' 格，已锁定 ' + view.game.lockedSlots + ' 格，已消除 ' + view.game.matches + ' 组。撤回剩余 ' + view.game.remainingTools('undo') + ' 次，提示剩余 ' + view.game.remainingTools('hint') + ' 次。';
-    const owned = view.progress.decorations(), nextReward = view.progress.nextDecoration();
+    const chapter = view.chapterInfo(view.modal === 'room' ? view.roomChapter : view.chapter);
+    const owned = view.progress.decorations(chapter.number), nextReward = view.progress.nextDecoration(chapter.number);
+    status.textContent += ' ' + chapter.name + '，第 ' + chapter.first + ' 至 ' + chapter.last + ' 关。';
     if (view.modal === 'room') {
       status.textContent += ' 我的小屋，已收集 ' + owned.length + ' / 5 件装饰。' +
         '等距视角的小屋有两面墙、木地板和坐在小窝里的猫咪。' +
@@ -67,8 +69,8 @@
         view.newDecoration ? ' 获得' + reward.name + '，已自动摆进小屋。' : ' 小屋已摆放' + reward.name + '。';
     }
     canvas.setAttribute('aria-label', view.modal === 'room' ? '等距视角猫咪小屋与装饰收藏' : menu ? '猫咪小屋与关卡选择' : '猫咪叠层三消棋盘');
-    document.getElementById('chapter-number').textContent = menu ? '05' : String(view.game.level.number).padStart(2, '0');
-    document.getElementById('chapter-title').textContent = menu ? '五间暖暖小屋' : view.game.level.name;
+    document.getElementById('chapter-number').textContent = String(menu ? chapter.number : view.game.level.number).padStart(2, '0');
+    document.getElementById('chapter-title').textContent = menu ? chapter.name : view.game.level.name;
     document.getElementById('chapter-subtitle').textContent = menu ? '通关添小物 · 已收集 ' + owned.length + ' / 5' : view.game.level.tiles.length + ' 张 · ' + view.game.level.kinds + ' 种图案 · ' + view.game.level.layers + ' 层堆叠';
   }
   function resize() {

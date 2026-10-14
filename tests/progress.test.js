@@ -10,7 +10,52 @@ function memory(initial) {
   return { read: key => values.get(key), write: (key, value) => values.set(key, value), values };
 }
 function win(game) { game.level.solution.forEach(id => assert.ok(game.pick(id).ok)); assert.equal(game.status, 'won'); }
-test('第一关减为 30 张，五关布局各不相同且不存在同层重叠', () => {
+
+test('扩到十关仍保持前五关生成结果完全一致，旧牌面无需重开', () => {
+  const crypto = require('node:crypto');
+  const baseline = [
+    'ba66c0ebfc91fcfea6992fb02d5d1eac2c9af7d231f6c81a88c2c6cb64b1beb3',
+    '4119d399861babe2d59abf714500e012b40c10f0ca064969603af83365012a74',
+    'ba470afb603ea2f75084d837646e03ade36d3b8c9fb0e32fb8d9260a8e475084',
+    '73e6c4b08b99a80abbb7c8fb1d26e3c288ea8e507b3c6fa97bcd6d92429bd31d',
+    '1fc972484e186a80bd63c565b665fd65efe8f59ea4cdab36d8e0a092431bf517'
+  ];
+  assert.deepEqual(LEVELS.slice(0, 5).map(info => crypto.createHash('sha256').update(JSON.stringify(createCampaignLevel(info.number))).digest('hex')), baseline);
+});
+
+test('第二章以七格轻松关重新开始，再逐步增加挑战', () => {
+  const rates = LEVELS.slice(5).map(info => measure(createCampaignLevel(info.number), 300).rate);
+  assert.ok(rates[0] > 0.6);
+  for (let i = 1; i < rates.length; i++) assert.ok(rates[i] < rates[i - 1], '本章难度阶梯：' + rates);
+  assert.ok(rates[1] > 0.2, '第7关应保留缓冲，避免骤然变难');
+});
+
+test('旧五关通关记录解锁第六关，保留旧局面、道具、临时格子与声音', () => {
+  const level = createCampaignLevel(3), moves = level.solution.slice(0, 4);
+  const storage = memory(JSON.stringify({ version: 1, completed: [1, 2, 3, 4, 5], currentLevel: 5, sound: false,
+    runs: { 3: moves }, runRevisions: { 3: level.revision }, runToolsUsed: { 3: { undo: 2, hint: 1 } }, runUnlockedSlots: { 3: 1 } }));
+  const progress = new Progress(storage);
+  assert.equal(progress.updatedRuns, false); assert.equal(progress.unlocked(), 6); assert.equal(progress.resumeNumber(), 6);
+  assert.equal(progress.gameFor(6).capacity, 7); assert.equal(progress.gameFor(7), null);
+  assert.equal(progress.decorations(1).length, 5); assert.equal(progress.decorations(2).length, 0);
+  assert.equal(progress.nextDecoration().id, 'mat'); assert.equal(progress.state.sound, false);
+  const old = progress.gameFor(3); assert.deepEqual(old.moves, moves);
+  assert.equal(old.remainingTools('undo'), 1); assert.equal(old.remainingTools('hint'), 0); assert.equal(old.capacity, 7);
+});
+
+test('选关分页只展示本章五关，锁定章节可预览但不能越关，收藏各归各屋', () => {
+  const view = new GameView({ ctx: {}, storage: memory(JSON.stringify({ version: 1, completed: [1, 2] })) });
+  view.press('chapter-2');
+  const levels = view.controls().filter(item => item.action.startsWith('level-'));
+  assert.deepEqual(levels.map(item => item.action), ['level-6', 'level-7', 'level-8', 'level-9', 'level-10']);
+  assert.ok(levels.every(item => item.disabled && item.y + item.h < 710));
+  view.press('level-6'); assert.equal(view.screen, 'levels');
+  view.press('room'); assert.equal(view.roomChapter, 2); assert.deepEqual(view.roomDecorations(), []);
+  view.press('furniture-cushion'); assert.equal(view.roomReaction, null);
+  view.press('close'); view.press('chapter-1'); view.press('room');
+  assert.deepEqual(view.roomDecorations().map(item => item.id), ['cushion', 'basket']);
+});
+test('第一关30张，十关布局各不相同且不存在同层重叠', () => {
   assert.deepEqual(createCampaignLevel(1), createLevel());
   assert.equal(createCampaignLevel(1).total, 30);
   const shapes = new Set();
@@ -31,10 +76,10 @@ test('第一关减为 30 张，五关布局各不相同且不存在同层重叠'
     counts.forEach(count => { assert.ok(count > 0); assert.equal(count % 3, 0); });
     shapes.add(JSON.stringify(level.tiles.map(t => [t.x, t.y, t.layer])));
   });
-  assert.equal(shapes.size, 5);
-  assert.throws(() => createCampaignLevel(6), RangeError);
+  assert.equal(shapes.size, 10);
+  assert.throws(() => createCampaignLevel(11), RangeError);
 });
-test('五种布局各验证 100 个种子，均能在未解锁的容量下通关且不占锁格', () => {
+test('十种布局各验证100个种子，均能在初始容量下通关且不占锁格', () => {
   LEVELS.forEach(info => {
     for (let seed = 0; seed < 100; seed++) {
       const game = new Game(createCampaignLevel(info.number, seed));
@@ -44,7 +89,7 @@ test('五种布局各验证 100 个种子，均能在未解锁的容量下通关
   });
 });
 test('同一套不使用道具的模拟策略下，固定五关的难度逐步上升', () => {
-  const rates = LEVELS.map(info => measure(createCampaignLevel(info.number), 300).rate);
+  const rates = LEVELS.slice(0, 5).map(info => measure(createCampaignLevel(info.number), 300).rate);
   for (let index = 1; index < rates.length; index++) {
     assert.ok(rates[index - 1] >= rates[index], '锁槽后后续关卡不能更容易：' + rates);
     if (index < 4) assert.ok(rates[index - 1] > rates[index], '前三个难度阶梯应明显：' + rates);
@@ -74,10 +119,10 @@ test('新版关卡不套用旧布局局面，旧第一关重开为30张，通关
   assert.equal(restored.gameFor(2).steps, 1); assert.equal(restored.state.runRevisions[2], 4);
 });
 
-test('第一关30张，后续牌量保持，五关实际遮挡链深度为 3、5、6、7、8', () => {
-  assert.deepEqual(LEVELS.map(info => info.total), [30, 45, 48, 54, 60]);
-  assert.deepEqual(LEVELS.map(info => info.kinds), [6, 6, 7, 8, 8]);
-  assert.deepEqual(LEVELS.map(info => info.layers), [3, 5, 6, 7, 8]);
+test('两章各五关牌量、图案数与实际遮挡深度符合配置', () => {
+  assert.deepEqual(LEVELS.map(info => info.total), [30, 45, 48, 54, 60, 36, 42, 48, 54, 60]);
+  assert.deepEqual(LEVELS.map(info => info.kinds), [6, 6, 7, 8, 8, 6, 6, 7, 7, 8]);
+  assert.deepEqual(LEVELS.map(info => info.layers), [3, 5, 6, 7, 8, 3, 4, 5, 6, 7]);
   LEVELS.forEach(info => {
     const level = createCampaignLevel(info.number), depths = [];
     for (let id = level.tiles.length - 1; id >= 0; id--) {
@@ -121,11 +166,11 @@ test('逐关通关解锁，存档加载后仍保留解锁结果，不能跳过�
     const game = progress.gameFor(info.number); win(game); assert.ok(progress.save(game));
     progress = new Progress(storage);
     assert.ok(progress.isComplete(info.number));
-    assert.equal(progress.unlocked(), Math.min(5, info.number + 1));
+    assert.equal(progress.unlocked(), Math.min(10, info.number + 1));
   });
-  assert.deepEqual(progress.state.completed, [1, 2, 3, 4, 5]);
+  assert.deepEqual(progress.state.completed, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   const replay = progress.gameFor(1); assert.equal(replay.steps, 0);
-  win(replay); progress.save(replay); assert.equal(progress.state.completed.length, 5);
+  win(replay); progress.save(replay); assert.equal(progress.state.completed.length, 10);
 });
 test('保存中的棋盘、暂存、消除数和撤回历史可以完整恢复', () => {
   const storage = memory(), progress = new Progress(storage), game = progress.gameFor(1);

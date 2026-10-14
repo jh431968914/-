@@ -17,7 +17,7 @@ async function main() {
     await page.goto('http://127.0.0.1:4173', { waitUntil: 'networkidle' });
     await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: KEY, value: JSON.stringify(data) });
     await page.reload({ waitUntil: 'networkidle' });
-    assert.match(await page.locator('#live-status').textContent(), /已通关 2 \/ 5 关，已解锁 3 关/);
+    assert.match(await page.locator('#live-status').textContent(), /已通关 2 \/ 10 关，已解锁 3 关/);
     assert.ok(await page.getByRole('button', { name: '开启声音', exact: true }).isVisible());
     await page.locator('[data-key="action-level-1"]').click();
     assert.match(await page.locator('#live-status').textContent(), /棋盘剩余 30 张/);

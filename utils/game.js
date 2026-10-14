@@ -6,12 +6,22 @@
   'use strict';
   const SIZE = 54;
   const CAPACITY = 7;
+  const CHAPTERS = [
+    { number: 1, name: '暖暖客厅', first: 1, last: 5, theme: 'living' },
+    { number: 2, name: '阳光花房', first: 6, last: 10, theme: 'garden' }
+  ];
+  function chapterFor(number) { return CHAPTERS.find(chapter => number >= chapter.first && number <= chapter.last); }
   const LEVELS = [
     { number: 1, name: '猫咪的小屋', difficulty: '轻松 · 入门', total: 30, kinds: 6, layers: 3, lockedSlots: 0, revision: 2, seed: 20261012, note: '从熟悉的小屋开始' },
     { number: 2, name: '窗边的午后', difficulty: '挑战 · 进阶', total: 45, kinds: 6, layers: 5, lockedSlots: 1, revision: 4, seed: 20269956, note: '先看第三张，再动手' },
     { number: 3, name: '毛线小角落', difficulty: '困难 · 深层', total: 48, kinds: 7, layers: 6, lockedSlots: 1, revision: 4, seed: 20262294, note: '多留一个空位' },
     { number: 4, name: '猫爪小花园', difficulty: '困难 · 规划', total: 54, kinds: 8, layers: 7, lockedSlots: 2, revision: 4, seed: 20262877, note: '藏在下面的，才是关键' },
-    { number: 5, name: '暖暖猫咪窝', difficulty: '极难 · 挑战', total: 60, kinds: 8, layers: 8, lockedSlots: 2, revision: 4, seed: 20262199, note: '一步一步，揭开猫咪窝' }
+    { number: 5, name: '暖暖猫咪窝', difficulty: '极难 · 挑战', total: 60, kinds: 8, layers: 8, lockedSlots: 2, revision: 4, seed: 20262199, note: '一步一步，揭开猫咪窝' },
+    { number: 6, name: '推开花房门', difficulty: '轻松 · 新章', total: 36, kinds: 6, layers: 3, lockedSlots: 0, revision: 1, seed: 20261014, note: '七个空位，慢慢迎接阳光' },
+    { number: 7, name: '晨间小水滴', difficulty: '适中 · 观察', total: 42, kinds: 6, layers: 4, lockedSlots: 1, revision: 1, seed: 20261179, note: '先找成对的小伙伴' },
+    { number: 8, name: '雏菊开花啦', difficulty: '进阶 · 选择', total: 48, kinds: 7, layers: 5, lockedSlots: 1, revision: 1, seed: 20261112, note: '看看花丛下面藏着什么' },
+    { number: 9, name: '风铃轻轻响', difficulty: '困难 · 规划', total: 54, kinds: 7, layers: 6, lockedSlots: 2, revision: 1, seed: 20261122, note: '留好空位，再揭开下一层' },
+    { number: 10, name: '满屋好时光', difficulty: '挑战 · 收官', total: 60, kinds: 8, layers: 7, lockedSlots: 2, revision: 1, seed: 20261122, note: '把花房的最后一份心意带回家' }
   ];
   const TYPES = [
     { name: '橘猫', color: '#f5b66b', bg: '#fff0d9' },
@@ -71,7 +81,7 @@
   function createLevel(seed, number) {
     number = number == null ? 1 : number;
     const info = LEVELS[number - 1];
-    if (!Number.isInteger(number) || !info) throw new RangeError('关卡编号必须在 1 到 5 之间');
+    if (!Number.isInteger(number) || !info) throw new RangeError('关卡编号必须在 1 到 ' + LEVELS.length + ' 之间');
     seed = seed == null ? info.seed : seed;
     const tiles = [];
     function add(x, y, layer) {
@@ -93,9 +103,14 @@
         2: [base, shifted, center, shifted.slice(0, 7), corners],
         3: [base12, shifted.slice(0, 10), center, shifted.slice(0, 8), cross, inner],
         4: [base12, shifted.slice(0, 10), center, shifted.slice(0, 8), seven, staggered, [[60, 60], [180, 120], [60, 180]]],
-        5: [base12, shifted.slice(0, 11), center.concat([[0, 120]]), shifted.slice(0, 9), seven, staggered, corners, [[90, 90], [150, 150]]]
+        5: [base12, shifted.slice(0, 11), center.concat([[0, 120]]), shifted.slice(0, 9), seven, staggered, corners, [[90, 90], [150, 150]]],
+        6: [Array.from({ length: 16 }, (_, i) => [30 + i % 4 * 60, 30 + Math.floor(i / 4) * 60]), base12, center.filter(p => p[0] !== 120 || p[1] !== 120)],
+        7: [base, shifted, center, shifted.slice(0, 8)],
+        8: [base, shifted, center, shifted.slice(0, 9), cross],
+        9: [base12, shifted, center, shifted.slice(0, 11), cross, staggered],
+        10: [base, shifted, center, shifted.slice(0, 10), center, corners, [[60, 60], [180, 120], [60, 180]]]
       };
-      layouts[number].forEach((points, layer) => points.forEach(p => add(p[0], p[1], layer)));
+      layouts[number].forEach((points, layer) => points.forEach(p => number > 5 ? add(240 - p[1], p[0], layer) : add(p[0], p[1], layer)));
     } else {
       for (let row = 0; row < 5; row++) {
         for (let col = 0; col < 5; col++) {
@@ -131,7 +146,9 @@
     if (number === 1) {
       batches.slice(0, 3).forEach(([a, b, c]) => kinds.push(a, b, a, c, b, a, c, b, c));
       kinds.push(2, 2, 2);
-    } else kinds.push.apply(kinds, mixedKinds(tiles.length, info.kinds, number, rng, levelCapacity(info)));
+    } else if (number === 6) {
+      batches.forEach(([a, b, c]) => kinds.push(a, b, a, c, b, a, c, b, c));
+    } else kinds.push.apply(kinds, mixedKinds(tiles.length, info.kinds, number > 5 ? number - 5 : number, rng, levelCapacity(info)));
     solution.forEach((id, i) => { tiles[id].kind = kinds[i]; });
     return Object.assign({}, info, { tiles, solution, seed });
   }
@@ -281,5 +298,5 @@
       return search(lo, hi, counts);
     }
   }
-  return { Game, createLevel, createCampaignLevel, LEVELS, TYPES, SIZE, CAPACITY, TOOL_LIMITS, levelCapacity };
+  return { Game, createLevel, createCampaignLevel, LEVELS, CHAPTERS, chapterFor, TYPES, SIZE, CAPACITY, TOOL_LIMITS, levelCapacity };
 });

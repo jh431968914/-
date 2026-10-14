@@ -3,7 +3,8 @@
 const { chromium } = require(process.argv[2] || 'playwright');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { Game, createCampaignLevel, LEVELS } = require('../utils/game');
+const { Game, createCampaignLevel, LEVELS, CHAPTERS, chapterFor } = require('../utils/game');
+const { DECORATIONS } = require('../utils/progress');
 async function main() {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 960 }, deviceScaleFactor: 1 });
@@ -14,16 +15,19 @@ async function main() {
     page.on('pageerror', error => errors.push(error.message));
     page.on('console', event => { if (event.type() === 'error') errors.push(event.text()); });
     if (viewport) await page.setViewportSize(viewport);
+    await page.clock.install({ time: new Date('2026-10-14T08:00:00Z') });
+    await page.clock.pauseAt(new Date('2026-10-14T08:00:01Z'));
     await page.goto('http://127.0.0.1:4173', { waitUntil: 'networkidle' });
   }
-  async function click(action) { await page.locator('[data-key="action-' + action + '"]').click(); }
+  async function click(action) { await page.locator('[data-key="action-' + action + '"]').click(); await page.clock.runFor(20); }
   async function statusMatches(pattern) { assert.match(await page.locator('#live-status').textContent(), pattern); }
-  async function screenshot(name) { await page.screenshot({ path: path.resolve(__dirname, '../tests/' + name + '.png'), fullPage: true }); }
+  async function screenshot(name) { await page.clock.runFor(20); await page.screenshot({ path: path.resolve(__dirname, '../tests/' + name + '.png'), fullPage: true }); }
   async function pick(id) {
     await page.waitForFunction(key => {
       const el = document.querySelector('[data-key="' + key + '"]'); return el && !el.disabled;
     }, 'tile-' + id);
     await page.locator('[data-key="tile-' + id + '"]').click();
+    await page.clock.runFor(500);
     await page.waitForFunction(() => {
       return document.querySelector('#interaction-layer').getAttribute('aria-busy') === 'false';
     });
@@ -31,11 +35,17 @@ async function main() {
   try {
     await openPage();
     assert.ok(await page.locator('#background-music').evaluate(music => music.paused && music.loop));
-    assert.equal(await page.title(), '喵喵消消屋 · 5 关体验版');
-    await statusMatches(/已通关 0 \/ 5 关，已解锁 1 关/);
+    assert.equal(await page.title(), '喵喵消消屋 · 10 关体验版');
+    await statusMatches(/已通关 0 \/ 10 关，已解锁 1 关/);
     await statusMatches(/已收集 0 \/ 5 件装饰。下一件奖励：暖暖软垫/);
     for (let number = 2; number <= 5; number++) assert.ok(await page.locator('[data-key="action-level-' + number + '"]').isDisabled());
     await screenshot('desktop-levels');
+    await click('chapter-2');
+    assert.equal(await page.locator('[data-key^="action-level-"]').count(), 5);
+    for (let number = 6; number <= 10; number++) assert.ok(await page.locator('[data-key="action-level-' + number + '"]').isDisabled());
+    await screenshot('chapter-2-locked');
+    await click('room'); await statusMatches(/已收集 0 \/ 5 件装饰/); await click('close');
+    await click('chapter-1');
     await click('help');
     assert.ok(await page.getByRole('button', { name: '知道啦，开始收拾', exact: true }).isVisible());
     await click('close');
@@ -76,8 +86,8 @@ async function main() {
       if (info.number > 1) {
         for (const id of level.solution.slice(0, 3)) await pick(id);
         await click('levels');
-        await statusMatches(new RegExp('已通关 ' + (info.number - 1) + ' / 5'));
-        if (info.number < 5) assert.ok(await page.locator('[data-key="action-level-' + (info.number + 1) + '"]').isDisabled());
+        await statusMatches(new RegExp('已通关 ' + (info.number - 1) + ' / 10'));
+        if (info.number < chapterFor(info.number).last) assert.ok(await page.locator('[data-key="action-level-' + (info.number + 1) + '"]').isDisabled());
         await page.reload({ waitUntil: 'networkidle' });
         assert.ok(await page.getByRole('button', { name: '继续第 ' + info.number + ' 关', exact: true }).isVisible());
         await click('resume');
@@ -96,33 +106,39 @@ async function main() {
       await screenshot('level-' + info.number);
       for (const id of level.solution) await pick(id);
       await statusMatches(new RegExp('第 ' + info.number + ' 关过关啦'));
-      const reward = ['暖暖软垫', '毛线小篮', '窗边绿植', '猫爪相框', '暖光小灯'][info.number - 1];
+      const reward = DECORATIONS[info.number - 1].name;
       await statusMatches(new RegExp('获得' + reward + '，点击带回小屋'));
       await page.locator('[data-key="action-bring-home"]').waitFor({ state: 'visible' });
       await screenshot('victory-' + info.number);
       {
         await click('bring-home'); await click('skip-arrival');
-        await statusMatches(new RegExp('我的小屋，已收集 ' + info.number + ' / 5 件装饰'));
+        await statusMatches(new RegExp('我的小屋，已收集 ' + (info.number - chapterFor(info.number).first + 1) + ' / 5 件装饰'));
         await statusMatches(new RegExp('已摆放：.*' + reward));
         if (info.number === 1) await screenshot('room-first');
         await click('close');
       }
       console.log('已通过第 ' + info.number + ' 关：' + info.name + '，完成 ' + info.total + ' 次真实取牌。');
-      if (info.number < 5) {
+      if (info.number < LEVELS.length) {
         assert.ok(await page.getByRole('button', { name: '进入第' + (info.number + 1) + '关：' + LEVELS[info.number].name, exact: true }).isVisible());
         await click('next');
         await statusMatches(new RegExp('棋盘剩余 ' + LEVELS[info.number].total + ' 张'));
       } else {
-        await click('finish'); await statusMatches(/已通关 5 \/ 5 关/);
+        await click('finish'); await statusMatches(/已通关 10 \/ 10 关/);
         await statusMatches(/五件装饰已全部收集/);
         await screenshot('room-complete'); await click('close');
       }
     }
     await screenshot('all-completed');
     await page.close(); await openPage({ width: 390, height: 844 });
-    await statusMatches(/已通关 5 \/ 5 关，已解锁 5 关/);
+    await statusMatches(/已通关 10 \/ 10 关，已解锁 10 关/);
     await click('room'); await statusMatches(/已收集 5 \/ 5 件装饰/); await click('close');
-    for (let number = 1; number <= 5; number++) assert.ok(await page.locator('[data-key="action-level-' + number + '"]').isEnabled());
+    for (const chapter of CHAPTERS) {
+      await click('chapter-' + chapter.number);
+      assert.equal(await page.locator('[data-key^="action-level-"]').count(), 5);
+      for (let number = chapter.first; number <= chapter.last; number++) assert.ok(await page.locator('[data-key="action-level-' + number + '"]').isEnabled());
+      await click('room'); await statusMatches(/已收集 5 \/ 5 件装饰/); await click('close');
+    }
+    await click('chapter-1');
     await click('level-1'); await statusMatches(/棋盘剩余 30 张/);
     const losing = new Game(first), loseRoute = [];
     while (losing.status === 'playing') {
@@ -166,7 +182,7 @@ async function main() {
     await statusMatches(/小窝 4 \/ 5 格，已锁定 2 格/);
     assert.equal(await page.locator('[data-key^="action-locked-slot-"]').count(), 2);
     assert.deepEqual(errors, []);
-    console.log('浏览器验证通过：五关首次奖励、小屋自动摆放与重开保留、收藏弹窗、三种屏幕布局，以及原有锁格、失败撤回、背景音乐和限次道具；无浏览器错误。');
+    console.log('浏览器验证通过：十关真实取牌通关、章节切换与锁定、每章独立收藏、首次奖励与重开保留、三种屏幕布局，以及锁格、失败撤回、背景音乐和限次道具；无浏览器错误。');
   } finally { await browser.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

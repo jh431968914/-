@@ -70,31 +70,37 @@ test('微信旧存档自动显示全部装饰，缺少 ellipse 时仍能绘制�
   const storage = new Map([[KEY, JSON.stringify({ version: 1, completed: [1, 2, 3, 4, 5], sound: false })]]);
   const dev = mock({ storage, noEllipse: true });
   assert.equal(dev.runtime.view.progress.decorations().length, 5);
+  dev.runtime.view.press('chapter-1');
   dev.tap(307, 231); assert.equal(dev.runtime.view.modal, 'room');
   dev.runtime.view.draw(Date.now());
   dev.tap(195, 715); assert.equal(dev.runtime.view.modal, null);
   assert.equal(dev.runtime.view.screen, 'levels'); dev.runtime.destroy();
 });
 
-test('小游戏家具触摸适配安全区与小屏，取消不触发，后台归来不会留下过期动画', () => {
-  const storage = new Map([[KEY, JSON.stringify({ version: 1, completed: [1, 2, 3, 4, 5], sound: false })]]);
+test('小游戏两间小屋的家具触摸适配安全区与小屏，取消不触发，后台归来不会留下过期动画', () => {
+  const storage = new Map([[KEY, JSON.stringify({ version: 1, completed: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], sound: false })]]);
   const dev = mock({ storage, noEllipse: true }), view = dev.runtime.view;
   dev.info.windowWidth = 320; dev.info.windowHeight = 640; dev.info.screenHeight = 640;
   dev.info.safeArea.bottom = 620; dev.callbacks.WindowResize();
-  dev.tap(307, 231);
-  for (const id of ['cushion', 'basket', 'plant', 'picture', 'lamp']) {
-    const control = view.controls().find(item => item.action === 'furniture-' + id);
-    const x = control.x + control.w / 2, y = control.y + control.h / 2, touch = dev.contact(x, y);
-    dev.callbacks.TouchStart({ touches: [touch] }); dev.callbacks.TouchCancel(); dev.callbacks.TouchEnd({ changedTouches: [touch] });
-    assert.equal(view.roomReaction, null);
-    dev.tap(x, y); assert.equal(view.roomReaction.id, id);
-    view.draw(view.roomReaction.start + 900);
-    dev.callbacks.Hide(); assert.equal(dev.pending.size, 0);
-    view.roomReaction.start -= 5000; dev.callbacks.Show();
-    assert.equal(view.roomReaction, null); assert.equal(dev.pending.size, 1);
+  for (const chapter of [1, 2]) {
+    view.press('chapter-' + chapter);
+    dev.tap(307, 231);
+    for (const item of view.roomDecorations()) {
+      const id = item.id;
+      const control = view.controls().find(item => item.action === 'furniture-' + id);
+      const x = control.x + control.w / 2, y = control.y + control.h / 2, touch = dev.contact(x, y);
+      dev.callbacks.TouchStart({ touches: [touch] }); dev.callbacks.TouchCancel(); dev.callbacks.TouchEnd({ changedTouches: [touch] });
+      assert.equal(view.roomReaction, null);
+      dev.tap(x, y); assert.equal(view.roomReaction.id, id);
+      view.draw(view.roomReaction.start + 900);
+      dev.callbacks.Hide(); assert.equal(dev.pending.size, 0);
+      view.roomReaction.start -= 5000; dev.callbacks.Show();
+      assert.equal(view.roomReaction, null); assert.equal(dev.pending.size, 1);
+    }
+    dev.tap(195, 715); assert.equal(view.modal, null);
   }
   assert.ok(dev.sounds.every(sound => !sound.playing));
-  dev.tap(195, 715); assert.equal(view.modal, null); dev.runtime.destroy();
+  dev.runtime.destroy();
 });
 
 test('小游戏背景音乐首次操作启动，切换与通知不重播，静音、后台和卸载正确处理', () => {

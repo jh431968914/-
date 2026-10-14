@@ -75,7 +75,7 @@ test('通关后可查看小屋、返回结算并进入下一关，集齐后主�
   view.press('bring-home'); view.press('close');
   assert.equal(view.screen, 'game'); assert.equal(view.game.status, 'won');
   view.press('next'); assert.equal(view.game.level.number, 2); assert.equal(view.modal, null);
-  for (let number = 2; number <= 5; number++) { win(view); if (number < 5) view.press('next'); }
+  for (let number = 2; number <= 10; number++) { win(view); if (number < 10) view.press('next'); }
   assert.deepEqual(view.controls().map(item => item.action), ['bring-home', 'restart', 'levels']);
   view.press('bring-home'); assert.equal(view.screen, 'game'); assert.equal(view.modal, 'room');
   view.press('skip-arrival'); view.press('levels'); view.press('room');
@@ -114,8 +114,8 @@ test('家具回应限为一个，尊重静音，结束或关闭会清理且从�
   const view = new GameView({ ctx, storage, playSound: name => sounds.push(name) });
   view.press('resume'); view.pick(view.game.available()[0].id); view.animation = null;
   const saved = storage.read(KEY), moves = view.game.moves.slice(), tools = Object.assign({}, view.game.toolsUsed);
-  view.press('levels'); view.press('room');
-  for (const item of DECORATIONS) {
+  view.press('levels'); view.press('chapter-1'); view.press('room');
+  for (const item of DECORATIONS.slice(0, 5)) {
     view.press('furniture-' + item.id);
     const reaction = view.roomReaction;
     view.press('furniture-' + item.id); view.press('collection-cushion');
@@ -138,7 +138,7 @@ test('家具回应限为一个，尊重静音，结束或关闭会清理且从�
   assert.deepEqual(view.game.moves, moves); assert.deepEqual(view.game.toolsUsed, tools);
 });
 
-test('五关首次奖励各播放一次落位和欢迎，动画前已保存，结束后可直接继续', () => {
+test('十关首次奖励各播放一次落位和欢迎，动画前已保存，结束后可直接继续', () => {
   const ctx = new Proxy({}, { get(target, key) { return key in target ? target[key] : () => {}; } });
   const storage = memory(), sounds = [], view = new GameView({ ctx, storage, playSound: name => sounds.push(name) });
   view.press('resume');
@@ -159,10 +159,10 @@ test('五关首次奖励各播放一次落位和欢迎，动画前已保存，�
     view.draw(arrival.start + 3200);
     assert.equal(view.roomArrival, null); assert.equal(view.roomReaction, null);
     assert.equal(storage.read(KEY), saved);
-    assert.ok(view.controls().some(control => control.action === (item.number < 5 ? 'next' : 'levels')));
+    assert.ok(view.controls().some(control => control.action === (item.number < 10 ? 'next' : 'levels')));
     view.press('close'); view.press('room'); assert.equal(view.roomArrival, null);
     view.press('close');
-    if (item.number < 5) view.press('next');
+    if (item.number < 10) view.press('next');
   }
   view.press('restart'); win(view);
   assert.equal(view.pendingArrival, null);

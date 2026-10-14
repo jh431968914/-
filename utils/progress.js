@@ -10,8 +10,16 @@
     { number: 2, id: 'basket', name: '毛线小篮', note: '把喜欢的小玩具收在一起' },
     { number: 3, id: 'plant', name: '窗边绿植', note: '让窗边多一点清新的绿意' },
     { number: 4, id: 'picture', name: '猫爪相框', note: '把一起度过的时光挂起来' },
-    { number: 5, id: 'lamp', name: '暖光小灯', note: '天暗了，小屋也暖暖亮着' }
+    { number: 5, id: 'lamp', name: '暖光小灯', note: '天暗了，小屋也暖暖亮着' },
+    { number: 6, id: 'mat', spot: 'cushion', name: '日光草垫', note: '给小猫留一块晒太阳的地方' },
+    { number: 7, id: 'can', spot: 'basket', name: '薄荷水壶', note: '和小猫一起照顾花花草草' },
+    { number: 8, id: 'flowers', spot: 'plant', name: '雏菊花盆', note: '一朵朵小花迎着阳光开放' },
+    { number: 9, id: 'chime', spot: 'picture', name: '叶子风铃', note: '把轻轻的风留在花房里' },
+    { number: 10, id: 'stand', spot: 'lamp', name: '暖木花架', note: '让每一盆绿意都有自己的家' }
   ];
+  function chapterDecorations(number) {
+    return number == null ? DECORATIONS : DECORATIONS.filter(item => Core.chapterFor(item.number).number === number);
+  }
   function empty() { return { version: 1, completed: [], currentLevel: 1, runs: {}, runRevisions: {}, runToolsUsed: {}, runUnlockedSlots: {}, sound: true }; }
   function unlockedSlots(value, level) {
     return Number.isInteger(value) && value >= 0 ? Math.min(Core.CAPACITY - Core.levelCapacity(level), value) : 0;
@@ -69,8 +77,8 @@
     canOpen(number) { return Number.isInteger(number) && number >= 1 && number <= this.unlocked(); }
     isComplete(number) { return this.state.completed.indexOf(number) !== -1; }
     // Completion is the source of truth, including awards for older saves.
-    decorations() { return DECORATIONS.filter(item => this.isComplete(item.number)); }
-    nextDecoration() { return DECORATIONS.find(item => !this.isComplete(item.number)) || null; }
+    decorations(chapter) { return chapterDecorations(chapter).filter(item => this.isComplete(item.number)); }
+    nextDecoration(chapter) { return chapterDecorations(chapter).find(item => !this.isComplete(item.number)) || null; }
     gameFor(number, fresh) {
       if (!this.canOpen(number)) return null;
       const level = Core.createCampaignLevel(number);
@@ -109,5 +117,5 @@
       } catch (_) { this.storageError = true; return false; }
     }
   }
-  return { Progress, KEY, DECORATIONS };
+  return { Progress, KEY, DECORATIONS, chapterDecorations };
 });

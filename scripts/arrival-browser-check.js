@@ -3,7 +3,7 @@
 const { chromium } = require(process.argv[2] || 'playwright');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { createCampaignLevel } = require('../utils/game');
+const { createCampaignLevel, LEVELS, chapterFor } = require('../utils/game');
 const { KEY, DECORATIONS } = require('../utils/progress');
 const SIZES = { desktop: { width: 1280, height: 960 }, mobile: { width: 390, height: 844 }, small: { width: 320, height: 640 } };
 
@@ -22,7 +22,7 @@ async function main() {
       await page.clock.pauseAt(new Date('2026-10-13T08:00:01Z'));
       const click = action => page.locator('[data-key="action-' + action + '"]').click();
       const status = () => page.locator('#live-status').textContent();
-      const shot = name => page.screenshot({ path: path.resolve(__dirname, '../tests/arrival-v10-' + name + '-' + size + '.png'), fullPage: true });
+      const shot = name => page.screenshot({ path: path.resolve(__dirname, '../tests/arrival-v11-' + name + '-' + size + '.png'), fullPage: true });
       await page.goto('http://127.0.0.1:4173', { waitUntil: 'load' });
       for (const item of DECORATIONS) {
         const level = createCampaignLevel(item.number);
@@ -50,7 +50,7 @@ async function main() {
         } else {
           await page.locator('[data-key="action-skip-arrival"]').focus(); await page.keyboard.press('Enter');
           await page.clock.runFor(20);
-          assert.equal(await page.evaluate(() => document.activeElement.dataset.key), 'action-next');
+          assert.equal(await page.evaluate(() => document.activeElement.dataset.key), item.number < LEVELS.length ? 'action-next' : 'action-levels');
         }
         assert.doesNotMatch(await status(), /新家具入屋|小猫回应/);
         assert.equal(await page.evaluate(key => localStorage.getItem(key), KEY), saved);
@@ -61,14 +61,15 @@ async function main() {
           await click('close'); await click('room');
           assert.doesNotMatch(await status(), /新家具入屋/);
           await click('close'); await click('next');
-        } else await click(item.number < 5 ? 'next' : 'levels');
-        if (item.number < 5) assert.match(await status(), /棋盘剩余/);
-        else assert.match(await status(), /已通关 5 \/ 5/);
-        await page.reload({ waitUntil: 'load' }); await click('room');
+        } else await click(item.number < LEVELS.length ? 'next' : 'levels');
+        if (item.number < LEVELS.length) assert.match(await status(), /棋盘剩余/);
+        else assert.match(await status(), /已通关 10 \/ 10/);
+        await page.reload({ waitUntil: 'load' });
+        await click('chapter-' + chapterFor(item.number).number); await click('room');
         assert.doesNotMatch(await status(), /新家具入屋/);
-        assert.match(await status(), new RegExp('已收集 ' + item.number + ' / 5'));
+        assert.match(await status(), new RegExp('已收集 ' + (item.number - chapterFor(item.number).first + 1) + ' / 5'));
       }
-      console.log(size + '：五件家具落位、欢迎、跳过、续关和重开验证通过。');
+      console.log(size + '：两章十件家具落位、欢迎、跳过、续关和重开验证通过。');
       await context.close();
     }
     assert.deepEqual(errors, []);

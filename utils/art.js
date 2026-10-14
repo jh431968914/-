@@ -199,6 +199,49 @@
       ellipse(ctx, 0, 1, 25, 4, '#f4dca4');
       star(ctx, 5, -12, 5, '#fff3ca');
     }
+    if (id === 'mat') {
+      ellipse(ctx, 0, 10, 31, 12, '#9da980'); ellipse(ctx, 0, 6, 31, 12, '#c2cea0');
+      ellipse(ctx, 0, 5, 25, 8, '#e2e5bb');
+      [-12, -4, 4, 12].forEach(px => stroke(ctx, [[px - 5, 0], [px + 5, 10]], '#c5cc9c', 1));
+      ellipse(ctx, 16, -1, 4, 7, '#8fac81', 0.6);
+    }
+    if (id === 'can') {
+      ctx.beginPath(); ctx.arc(17, 1, 15, -Math.PI / 2, Math.PI / 2); ctx.strokeStyle = '#7a9b88'; ctx.lineWidth = 5; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-13, 2); ctx.lineTo(-30, -14); ctx.lineTo(-34, -11); ctx.lineTo(-19, 14); ctx.closePath(); ctx.fillStyle = '#8fb39c'; ctx.fill();
+      box(ctx, -19, -10, 38, 34, 9, '#9bbda4'); ellipse(ctx, 0, -10, 19, 6, '#c1d4ad');
+      ellipse(ctx, 0, -11, 11, 3, '#749886'); ellipse(ctx, -5, 8, 6, 9, '#c8d9b7', -0.4);
+      stroke(ctx, [[-5, 13], [0, 2]], '#88a38e', 1.3);
+    }
+    if (id === 'flowers') {
+      box(ctx, -17, 5, 34, 21, 6, '#d6a58f'); ellipse(ctx, 0, 5, 19, 6, '#eed0ad');
+      [[-10, -16], [8, -26], [16, -6]].forEach(([px, py], index) => {
+        stroke(ctx, [[px, py], [0, 9]], '#8ba074', 2);
+        for (let i = 0; i < 6; i++) ellipse(ctx, px + Math.cos(i * Math.PI / 3) * 6, py + Math.sin(i * Math.PI / 3) * 6, 4.5, 4, index === 2 ? '#eed5bb' : '#fff8e4');
+        ellipse(ctx, px, py, 4, 4, '#e0b464');
+      });
+    }
+    if (id === 'chime') {
+      stroke(ctx, [[0, -31], [0, -16]], '#b3a887', 1.5);
+      ctx.beginPath(); ctx.arc(0, -9, 17, Math.PI, 0); ctx.fillStyle = '#b4c9a2'; ctx.fill();
+      ellipse(ctx, 0, -9, 17, 4, '#8faa8d');
+      [-10, 0, 10].forEach((px, index) => {
+        const bottom = 14 + (index === 1 ? 10 : 0);
+        stroke(ctx, [[px, -8], [px, bottom]], '#bca985', 1);
+        ellipse(ctx, px, bottom, 4, 7, index === 1 ? '#d8c17d' : '#96b08a', 0.25);
+      });
+    }
+    if (id === 'stand') {
+      stroke(ctx, [[-19, 27], [-19, -24]], '#b0926b', 4); stroke(ctx, [[19, 27], [19, -24]], '#b0926b', 4);
+      [-8, 17].forEach((py, index) => {
+        box(ctx, -26, py, 52, 7, 2, '#c7ab82'); box(ctx, -26, py, 52, 3, 1, '#e2c79e');
+        [-12, 12].forEach(px => {
+          stroke(ctx, [[px, py - 8], [px, py - 24]], '#87a078', 1.5);
+          ellipse(ctx, px - 4, py - 18, 4, 6, '#a2bb8d', -0.6);
+          ellipse(ctx, px + 4, py - 22, 4, 6, '#c0cc9f', 0.6);
+          box(ctx, px - 7, py - 10, 14, 10, 2, index ? '#cd9f8e' : '#e2bb8c');
+        });
+      });
+    }
     ctx.restore();
   }
   function roomLayout(x, y, width, height) {
@@ -220,16 +263,21 @@
       target('lamp', 5, 0.95, 0, -0.8, -2.35, 1.9, 2.55)
     ] };
   }
-  function isometricRoom(ctx, x, y, width, height, owned, reaction, arrival) {
+  function isometricRoom(ctx, x, y, width, height, owned, reaction, arrival, theme) {
     ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 1;
     const { sx, sy, sz, project } = roomLayout(x, y, width, height);
+    const garden = theme === 'garden';
+    const gardenItems = { cushion: 'mat', basket: 'can', plant: 'flowers', picture: 'chime', lamp: 'stand' };
+    const itemId = id => garden ? gardenItems[id] : id;
+    const has = id => owned.has(itemId(id));
     const elapsed = reaction ? reaction.elapsed : 0;
     const smooth = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
     const strength = reaction ? smooth(elapsed / 450) * smooth((reaction.duration - elapsed) / 550) : 0;
-    const active = id => reaction && reaction.id === id ? strength : 0;
+    const active = id => reaction && reaction.id === itemId(id) ? strength : 0;
     const pulse = Math.sin(elapsed / 190);
     const landing = arrival ? smooth(arrival.elapsed / arrival.landAt) : 1;
     function beginFurniture(id) {
+      id = itemId(id);
       ctx.save();
       if (arrival && arrival.id === id) {
         ctx.translate(0, -sx * 1.05 * (1 - landing));
@@ -237,6 +285,7 @@
       }
     }
     function endFurniture(id, u, v, z) {
+      id = itemId(id);
       ctx.restore();
       if (!arrival || arrival.id !== id) return;
       const sparkle = Math.max(0, 1 - Math.abs(arrival.elapsed - arrival.landAt) / 650);
@@ -270,14 +319,22 @@
     }
     const base = project(3, 2.6, -0.1);
     ellipse(ctx, base[0], base[1], sx * 5.8, sy * 5.8, 'rgba(123, 113, 84, 0.10)');
-    block(0, 0, -0.18, 6, 5, 0.18, '#e7d0aa', '#cbb28b', '#d9bd95');
+    block(0, 0, -0.18, 6, 5, 0.18, garden ? '#e8d8bb' : '#e7d0aa', '#cbb28b', '#d9bd95');
     for (let v = 0.5; v < 5; v += 0.5) {
       stroke(ctx, [project(0, v, 0.01), project(6, v, 0.01)], '#d8bf98', 0.65);
       const u = (Math.round(v * 2) % 3) + 1;
       stroke(ctx, [project(u, v - 0.5, 0.01), project(u, v, 0.01)], '#dac29c', 0.6);
     }
-    polygon([project(0, 0), project(0, 5), project(0, 5, 3), project(0, 0, 3)], '#eee9da', '#ddd7c6');
-    polygon([project(0, 0), project(6, 0), project(6, 0, 3), project(0, 0, 3)], '#f7efdf', '#e3dac5');
+    polygon([project(0, 0), project(0, 5), project(0, 5, 3), project(0, 0, 3)], garden ? '#dce8d5' : '#eee9da', '#ddd7c6');
+    polygon([project(0, 0), project(6, 0), project(6, 0, 3), project(0, 0, 3)], garden ? '#f1eed7' : '#f7efdf', '#e3dac5');
+    if (garden) {
+      [0.35, 1.9, 3.45].forEach(v => {
+        polygon([project(0.02, v, 0.65), project(0.02, v + 1.25, 0.65), project(0.02, v + 1.25, 2.72), project(0.02, v, 2.72)], '#edf1dc', '#adc5a7');
+        stroke(ctx, [project(0.03, v, 1.65), project(0.03, v + 1.25, 1.65)], '#b8cbb0', 2);
+      });
+      const sun = project(4.75, 0.03, 2.4); ellipse(ctx, sun[0], sun[1], sx * 0.34, sx * 0.34, '#edda9f');
+      polygon([project(2.7, 0.2, 0.01), project(4.2, 0.2, 0.01), project(5.7, 3.7, 0.01), project(4.1, 3.7, 0.01)], '#eee2b8');
+    }
     stroke(ctx, [project(0, 5, 0.06), project(0, 0, 0.06), project(6, 0, 0.06)], '#d9ceba', 3);
     function windowPane(u1, u2, z1, z2, fill) {
       polygon([project(u1, 0.02, z1), project(u2, 0.02, z1), project(u2, 0.02, z2), project(u1, 0.02, z2)], fill);
@@ -289,74 +346,98 @@
     block(1.04, 0, 0.94, 3.07, 0.28, 0.1, '#e2caa2', '#cbb28c', '#d3ba95');
     block(0.65, 0.58, 0, 0.19, 0.42, 0.64, '#b8c59e', '#98ad88', '#a7b794');
     block(0.91, 0.58, 0, 0.15, 0.42, 0.48, '#e3cb9f', '#c7b18a', '#d4c096');
-    if (owned.has('picture')) {
+    if (has('picture')) {
       beginFurniture('picture');
-      stroke(ctx, [project(0.04, 2.45, 2.15), project(0.04, 3.08, 2.49), project(0.04, 3.7, 2.15)], '#cbb794', 1);
-      polygon([project(0.04, 2.45, 1.06), project(0.04, 3.7, 1.06), project(0.04, 3.7, 2.15), project(0.04, 2.45, 2.15)], '#c6a681');
-      polygon([project(0.06, 2.55, 1.15), project(0.06, 3.6, 1.15), project(0.06, 3.6, 2.06), project(0.06, 2.55, 2.06)], '#fff8e7');
-      const center = project(0.08, 3.07, 1.61);
-      ctx.save(); ctx.translate(center[0], center[1]); ctx.transform(sx, -sy, 0, sz, 0, 0);
-      icon(ctx, 5, 0, 0, 0.78); ctx.restore();
-      if (active('picture')) star(ctx, center[0] + sx * 0.7, center[1] - sx * 0.7, sx * 0.18 * strength, '#dfb85f');
+      if (garden) {
+        const p = project(0.08, 3.07, 1.61);
+        ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('picture') * pulse * 0.12);
+        decoration(ctx, 'chime', 0, 0, sx * 1.6); ctx.restore();
+      } else {
+        stroke(ctx, [project(0.04, 2.45, 2.15), project(0.04, 3.08, 2.49), project(0.04, 3.7, 2.15)], '#cbb794', 1);
+        polygon([project(0.04, 2.45, 1.06), project(0.04, 3.7, 1.06), project(0.04, 3.7, 2.15), project(0.04, 2.45, 2.15)], '#c6a681');
+        polygon([project(0.06, 2.55, 1.15), project(0.06, 3.6, 1.15), project(0.06, 3.6, 2.06), project(0.06, 2.55, 2.06)], '#fff8e7');
+        const center = project(0.08, 3.07, 1.61);
+        ctx.save(); ctx.translate(center[0], center[1]); ctx.transform(sx, -sy, 0, sz, 0, 0);
+        icon(ctx, 5, 0, 0, 0.78); ctx.restore();
+        if (active('picture')) star(ctx, center[0] + sx * 0.7, center[1] - sx * 0.7, sx * 0.18 * strength, '#dfb85f');
+      }
       endFurniture('picture', 0.08, 3.07, 1.61);
     }
     // Furniture is painted from the back of the room towards the cat in front.
-    if (owned.has('plant')) {
+    if (has('plant')) {
       beginFurniture('plant');
-      shadow(0.85, 3.55, 0.52, 0.4);
-      const u = 0.5, v = 3.2, d = 0.66, h = 0.45, inset = 0.1;
-      polygon([project(u + inset, v + d - inset), project(u + d - inset, v + d - inset), project(u + d, v + d, h), project(u, v + d, h)], '#d8b990');
-      polygon([project(u + d - inset, v + inset), project(u + d - inset, v + d - inset), project(u + d, v + d, h), project(u + d, v, h)], '#c2a17b');
-      polygon([project(u, v, h), project(u + d, v, h), project(u + d, v + d, h), project(u, v + d, h)], '#ebcfaa');
-      const p = project(0.83, 3.53, h);
-      ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('plant') * pulse * 0.08); ctx.translate(-p[0], -p[1]);
-      stroke(ctx, [[p[0], p[1]], [p[0], p[1] - sx * 1.22]], '#789a76', 1.8);
-      ellipse(ctx, p[0] - sx * 0.15, p[1] - sx * 0.56, sx * 0.14, sx * 0.3, '#88a986', -0.65);
-      ellipse(ctx, p[0] + sx * 0.14, p[1] - sx * 0.86, sx * 0.14, sx * 0.28, '#a8c092', 0.65);
-      ellipse(ctx, p[0] - sx * 0.09, p[1] - sx * 1.12, sx * 0.12, sx * 0.25, '#88a986', -0.4);
-      ctx.restore();
+      if (garden) {
+        shadow(0.85, 3.55, 0.52, 0.4); const p = project(0.83, 3.53, 0.65);
+        ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('plant') * pulse * 0.04);
+        decoration(ctx, 'flowers', 0, 0, sx * 1.7); ctx.restore();
+      } else {
+        shadow(0.85, 3.55, 0.52, 0.4);
+        const u = 0.5, v = 3.2, d = 0.66, h = 0.45, inset = 0.1;
+        polygon([project(u + inset, v + d - inset), project(u + d - inset, v + d - inset), project(u + d, v + d, h), project(u, v + d, h)], '#d8b990');
+        polygon([project(u + d - inset, v + inset), project(u + d - inset, v + d - inset), project(u + d, v + d, h), project(u + d, v, h)], '#c2a17b');
+        polygon([project(u, v, h), project(u + d, v, h), project(u + d, v + d, h), project(u, v + d, h)], '#ebcfaa');
+        const p = project(0.83, 3.53, h);
+        ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('plant') * pulse * 0.08); ctx.translate(-p[0], -p[1]);
+        stroke(ctx, [[p[0], p[1]], [p[0], p[1] - sx * 1.22]], '#789a76', 1.8);
+        ellipse(ctx, p[0] - sx * 0.15, p[1] - sx * 0.56, sx * 0.14, sx * 0.3, '#88a986', -0.65);
+        ellipse(ctx, p[0] + sx * 0.14, p[1] - sx * 0.86, sx * 0.14, sx * 0.28, '#a8c092', 0.65);
+        ellipse(ctx, p[0] - sx * 0.09, p[1] - sx * 1.12, sx * 0.12, sx * 0.25, '#88a986', -0.4);
+        ctx.restore();
+      }
       endFurniture('plant', 0.83, 3.53, 1);
     }
-    if (owned.has('lamp')) {
+    if (has('lamp')) {
       beginFurniture('lamp');
-      const bottom = project(5.0, 0.95), top = project(5.0, 0.95, 1.43);
-      const warmth = active('lamp');
-      ellipse(ctx, top[0], top[1], sx * (0.72 + warmth * 0.6), sx * (0.78 + warmth * 0.55), 'rgba(240, 206, 136, 0.22)');
-      if (warmth) {
-        const light = project(4.6, 2.35);
-        ellipse(ctx, light[0], light[1], sx * 1.6, sy * 1.1, 'rgba(255, 223, 148, ' + warmth * 0.3 + ')');
+      if (garden) {
+        const p = project(5, 0.95, 0.74); shadow(5, 0.95, 0.7, 0.5);
+        decoration(ctx, 'stand', p[0], p[1], sx * 1.9);
+        if (active('lamp')) star(ctx, p[0] + sx * 0.7, p[1] - sx * 0.7, sx * 0.16 * strength, '#d9b568');
+      } else {
+        const bottom = project(5.0, 0.95), top = project(5.0, 0.95, 1.43);
+        const warmth = active('lamp');
+        ellipse(ctx, top[0], top[1], sx * (0.72 + warmth * 0.6), sx * (0.78 + warmth * 0.55), 'rgba(240, 206, 136, 0.22)');
+        if (warmth) {
+          const light = project(4.6, 2.35);
+          ellipse(ctx, light[0], light[1], sx * 1.6, sy * 1.1, 'rgba(255, 223, 148, ' + warmth * 0.3 + ')');
+        }
+        shadow(5.0, 0.95, 0.65, 0.43);
+        stroke(ctx, [bottom, top], '#b59b74', 3);
+        ellipse(ctx, bottom[0], bottom[1], sx * 0.45, sy * 0.38, '#cbb18a');
+        polygon([[top[0] - sx * 0.26, top[1] - sx * 0.43], [top[0] + sx * 0.26, top[1] - sx * 0.43],
+          [top[0] + sx * 0.5, top[1] + sx * 0.19], [top[0] - sx * 0.5, top[1] + sx * 0.19]], '#e0bf80');
+        stroke(ctx, [[top[0] - sx * 0.15, top[1] - sx * 0.34], [top[0] - sx * 0.3, top[1] + sx * 0.08]], '#f0dba9', 2.4);
+        ellipse(ctx, top[0], top[1] + sx * 0.19, sx * 0.5, sy * 0.16, '#f7dda4');
+        star(ctx, top[0] + sx * 0.04, top[1] - sx * 0.09, sx * 0.1, '#fff4cf');
       }
-      shadow(5.0, 0.95, 0.65, 0.43);
-      stroke(ctx, [bottom, top], '#b59b74', 3);
-      ellipse(ctx, bottom[0], bottom[1], sx * 0.45, sy * 0.38, '#cbb18a');
-      polygon([[top[0] - sx * 0.26, top[1] - sx * 0.43], [top[0] + sx * 0.26, top[1] - sx * 0.43],
-        [top[0] + sx * 0.5, top[1] + sx * 0.19], [top[0] - sx * 0.5, top[1] + sx * 0.19]], '#e0bf80');
-      stroke(ctx, [[top[0] - sx * 0.15, top[1] - sx * 0.34], [top[0] - sx * 0.3, top[1] + sx * 0.08]], '#f0dba9', 2.4);
-      ellipse(ctx, top[0], top[1] + sx * 0.19, sx * 0.5, sy * 0.16, '#f7dda4');
-      star(ctx, top[0] + sx * 0.04, top[1] - sx * 0.09, sx * 0.1, '#fff4cf');
       endFurniture('lamp', 5, 0.95, 1.43);
     }
-    if (owned.has('basket')) {
+    if (has('basket')) {
       beginFurniture('basket');
-      shadow(2.28, 3.35, 0.78, 0.47);
-      block(1.7, 2.9, 0, 1.14, 0.94, 0.35, '#e1c7a0', '#d4b68d', '#c2a179');
-      const p = project(2.27, 3.37, 0.38);
-      ellipse(ctx, p[0], p[1], sx * 0.63, sy * 0.5, '#b9956e');
-      ctx.beginPath(); ctx.moveTo(p[0] - sx * 0.55, p[1]);
-      ctx.bezierCurveTo(p[0] - sx * 0.5, p[1] - sx * 0.95, p[0] + sx * 0.5, p[1] - sx * 0.95, p[0] + sx * 0.55, p[1]);
-      ctx.strokeStyle = '#c5a47b'; ctx.lineWidth = 2.5; ctx.stroke();
-      icon(ctx, 4, p[0] - sx * 0.24, p[1] - sx * 0.12, sx * 0.65);
-      icon(ctx, 4, p[0] + sx * 0.25, p[1] - sx * 0.09, sx * 0.53);
-      for (let i = 0; i < 4; i++) stroke(ctx, [project(1.8 + i * 0.28, 3.85, 0.03), project(1.8 + i * 0.28, 3.85, 0.28)], '#bd9d76', 0.8);
-      stroke(ctx, [project(1.72, 3.85, 0.14), project(2.82, 3.85, 0.14)], '#ecd2ad', 0.9);
+      if (garden) {
+        const p = project(2.27, 3.37, 0.6); shadow(2.28, 3.35, 0.78, 0.47);
+        ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('basket') * -0.13);
+        decoration(ctx, 'can', 0, 0, sx * 1.4); ctx.restore();
+      } else {
+        shadow(2.28, 3.35, 0.78, 0.47);
+        block(1.7, 2.9, 0, 1.14, 0.94, 0.35, '#e1c7a0', '#d4b68d', '#c2a179');
+        const p = project(2.27, 3.37, 0.38);
+        ellipse(ctx, p[0], p[1], sx * 0.63, sy * 0.5, '#b9956e');
+        ctx.beginPath(); ctx.moveTo(p[0] - sx * 0.55, p[1]);
+        ctx.bezierCurveTo(p[0] - sx * 0.5, p[1] - sx * 0.95, p[0] + sx * 0.5, p[1] - sx * 0.95, p[0] + sx * 0.55, p[1]);
+        ctx.strokeStyle = '#c5a47b'; ctx.lineWidth = 2.5; ctx.stroke();
+        icon(ctx, 4, p[0] - sx * 0.24, p[1] - sx * 0.12, sx * 0.65);
+        icon(ctx, 4, p[0] + sx * 0.25, p[1] - sx * 0.09, sx * 0.53);
+        for (let i = 0; i < 4; i++) stroke(ctx, [project(1.8 + i * 0.28, 3.85, 0.03), project(1.8 + i * 0.28, 3.85, 0.28)], '#bd9d76', 0.8);
+        stroke(ctx, [project(1.72, 3.85, 0.14), project(2.82, 3.85, 0.14)], '#ecd2ad', 0.9);
+      }
       endFurniture('basket', 2.27, 3.37, 0.38);
     }
     shadow(4.13, 3.15, 1.03, 0.88);
-    if (owned.has('cushion')) {
+    if (has('cushion')) {
       beginFurniture('cushion');
-      floorRound(3.15, 2.4, 0.02, 1.98, 1.5, 0.24, '#bf9283');
-      floorRound(3.15, 2.4, 0.21, 1.98, 1.5, 0.24, '#d8a697');
-      floorRound(3.27, 2.51, 0.24, 1.74, 1.28, 0.2, '#e9c1b0');
+      floorRound(3.15, 2.4, 0.02, 1.98, 1.5, 0.24, garden ? '#91a47a' : '#bf9283');
+      floorRound(3.15, 2.4, 0.21, 1.98, 1.5, 0.24, garden ? '#b5c391' : '#d8a697');
+      floorRound(3.27, 2.51, 0.24, 1.74, 1.28, 0.2, garden ? '#dce2b1' : '#e9c1b0');
       endFurniture('cushion', 4.13, 3.15, 0.24);
     }
     const sniff = active('plant'), play = active('basket'), pose = {
@@ -365,12 +446,16 @@
       tilt: sniff * (-0.16 + 0.03 * pulse) + play * 0.06 * pulse
     };
     // Walk over to sniff the plant, then return along the same route.
-    const cushionHeight = arrival && arrival.id === 'cushion' ? landing : 1;
-    const cat = project(4.13 - sniff * 2.1, 3.15 + sniff * 1.38, owned.has('cushion') ? 0.24 * (1 - sniff) * cushionHeight : 0.01);
+    const cushionHeight = arrival && arrival.id === itemId('cushion') ? landing : 1;
+    const cat = project(4.13 - sniff * 2.1, 3.15 + sniff * 1.38, has('cushion') ? 0.24 * (1 - sniff) * cushionHeight : 0.01);
     if (play) {
       const ball = project(3.12 + 0.22 * pulse * play, 3.96, 0.14);
       ctx.save(); ctx.globalAlpha = play;
-      ctx.translate(ball[0], ball[1]); ctx.rotate(pulse * 0.7); icon(ctx, 4, 0, 0, sx * 0.67); ctx.restore();
+      ctx.translate(ball[0], ball[1]);
+      if (garden) {
+        [0, 1, 2].forEach(i => ellipse(ctx, -i * sx * 0.13, -sx * (0.2 + (elapsed / 700 + i / 3) % 1), sx * 0.045, sx * 0.07, '#87b7b4'));
+      } else { ctx.rotate(pulse * 0.7); icon(ctx, 4, 0, 0, sx * 0.67); }
+      ctx.restore();
     }
     companion(ctx, cat[0], cat[1] - sx * 0.9 - sniff * Math.sin(elapsed / 140) * sx * 0.025, sx * 2.9, !play && !sniff, pose);
     if (active('cushion')) {
