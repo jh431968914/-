@@ -24,7 +24,12 @@
     books: { label: '陪小猫翻翻睡前书', message: '这一页的故事，想和你一起听喵～', duration: 3000 },
     vase: { label: '让小猫闻闻晚香花', message: '轻轻闻一闻，晚上的花也很温柔～', duration: 3400 },
     clock: { label: '和小猫听听时钟', message: '滴答，滴答，陪你的时间慢慢走～', duration: 2800 },
-    readingLamp: { label: '陪小猫读一会儿书', message: '留一盏小灯，等你回来一起读故事～', duration: 3200 }
+    readingLamp: { label: '陪小猫读一会儿书', message: '留一盏小灯，等你回来一起读故事～', duration: 3200 },
+    sunMat: { label: '陪小猫迎接晨光', message: '新的一天，从暖暖的肚皮开始喵～', duration: 3400 },
+    picnicBasket: { label: '和小猫看看野餐篮', message: '小篮子装好啦，今天也想陪着你～', duration: 3000 },
+    herbPot: { label: '让小猫闻闻薄荷', message: '晨风带来薄荷香，轻轻吸一口～', duration: 3400 },
+    bunting: { label: '和小猫看看小挂旗', message: '小旗子在招手，我也和你挥挥爪～', duration: 2800 },
+    welcomeSign: { label: '陪小猫看看纪念牌', message: '这里是我们的家，随时欢迎你回来～', duration: 3200 }
   };
   function text(ctx, value, x, y, size, color, weight, align) {
     ctx.font = (weight || '400') + ' ' + size + 'px "PingFang SC", "Microsoft YaHei", sans-serif';
@@ -139,11 +144,11 @@
       this.animation = { event: result, start: Date.now(), duration: result.matched ? 430 : 190, sounded: false };
       this.audio('tap'); this.notify(true);
     }
-    openRoom() {
+    openRoom(chapterNumber) {
       if (this.roomArrival) return;
       this.clearRoom(); this.modal = 'room';
       this.roomChapter = this.pendingArrival ? Core.chapterFor(this.pendingArrival.number).number :
-        this.screen === 'game' ? Core.chapterFor(this.game.level.number).number : this.chapter;
+        chapterNumber || (this.screen === 'game' ? Core.chapterFor(this.game.level.number).number : this.chapter);
       if (this.pendingArrival && this.game.status === 'won' && !this.animation) {
         this.roomGift = this.pendingArrival;
         // The reward was saved on winning. This ceremony is only a transient presentation.
@@ -151,6 +156,10 @@
         this.roomArrival = { id: this.roomGift.id, start: Date.now(), landAt: 800, duration: 3200, welcomed: false };
       }
       this.notify();
+    }
+    openThanks() {
+      if (this.animation || this.progress.state.completed.length !== Core.LEVELS.length) return;
+      this.clearRoom(); this.modal = 'thanks'; this.notify();
     }
     skipArrival() {
       if (!this.roomArrival) return;
@@ -174,6 +183,13 @@
       this.audio('tap'); this.notify();
     }
     press(action) {
+      if (action === 'thanks') { this.openThanks(); return; }
+      if (action === 'thank-room') {
+        if (this.modal !== 'thanks') return;
+        this.chapter = Core.CHAPTERS[Core.CHAPTERS.length - 1].number;
+        this.openRoom(this.chapter); return;
+      }
+      if (action === 'thank-levels') { if (this.modal === 'thanks') this.showLevels(); return; }
       if (action.indexOf('chapter-') === 0) {
         const number = Number(action.slice(8));
         if (this.screen === 'levels' && !this.modal && this.chapterInfo(number)) { this.chapter = number; this.notify(); }
@@ -198,6 +214,11 @@
       if (action === 'hint') this.hint();
     }
     controls() {
+      if (this.modal === 'thanks') return [
+        { action: 'thank-room', label: this.pendingArrival ? '带回最后一份心意' : '回到晨光露台', x: 67, y: 584, w: 256, h: 46 },
+        { action: 'thank-levels', label: '回到选关', x: 67, y: 640, w: 256, h: 40 },
+        { action: 'close', label: this.screen === 'levels' ? '返回选关页面' : '返回通关画面', x: 115, y: 692, w: 160, h: 25 }
+      ];
       if (this.modal === 'help') return [{ action: 'close', label: '知道啦，开始收拾', x: 67, y: 535, w: 256, h: 46 }];
       if (this.modal === 'room') {
         const owned = this.roomDecorations(), disabled = !!(this.roomReaction || this.roomArrival);
@@ -216,9 +237,10 @@
         return common.concat(this.chapterLevels().map((level, index) => ({ action: 'level-' + level.number,
           label: '第' + level.number + '关：' + level.name + (this.progress.isComplete(level.number) ? '，已通关，已获得' : this.progress.canOpen(level.number) ? '，可挑战，通关奖励' : '，未解锁，通关奖励') + Saved.DECORATIONS[level.number - 1].name,
           x: 25, y: 306 + index * 77, w: 340, h: 66, disabled: !this.progress.canOpen(level.number) })),
-          Core.CHAPTERS.map((chapter, index) => ({ action: 'chapter-' + chapter.number, label: chapter.name + '，第 ' + chapter.first + ' 至 ' + chapter.last + ' 关' + (this.progress.canOpen(chapter.first) ? '' : '，通过第 ' + (chapter.first - 1) + ' 关开启'), x: 25 + index * 116, y: 214, w: 108, h: 34 })),
+          Core.CHAPTERS.map((chapter, index) => ({ action: 'chapter-' + chapter.number, label: chapter.name + '，第 ' + chapter.first + ' 至 ' + chapter.last + ' 关' + (this.progress.canOpen(chapter.first) ? '' : '，通过第 ' + (chapter.first - 1) + ' 关开启'), x: 25 + index * 86, y: 214, w: 82, h: 34 })),
           [{ action: 'room', label: '看看我的小屋，' + this.chapterInfo().name + '，已收集 ' + this.progress.decorations(this.chapter).length + ' / 5 件装饰', x: 250, y: 260, w: 115, h: 32 },
-            { action: 'resume', label: this.resumeLabel(), x: 25, y: 712, w: 340, h: 50 }]);
+            { action: 'resume', label: this.resumeLabel(), x: 25, y: 712, w: 340, h: 50 }],
+          this.progress.state.completed.length === Core.LEVELS.length ? [{ action: 'thanks', label: '看看小猫的感谢信', x: 75, y: 773, w: 240, h: 26 }] : []);
       }
       if (this.game.status !== 'playing' && !this.animation) {
         if (this.game.status === 'won') return [
@@ -227,7 +249,8 @@
           { action: 'restart', label: '再玩这一关', x: 67, y: 570, w: 121, h: 38 },
           { action: this.game.level.number === Core.LEVELS.length ? 'levels' : this.pendingArrival ? 'next' : 'room',
             label: this.game.level.number === Core.LEVELS.length ? '选择关卡' : this.pendingArrival ? '先去下一关' : '回小屋看看', x: 202, y: 570, w: 121, h: 38 }
-        ];
+        ].concat(this.game.level.number === Core.LEVELS.length && this.progress.state.completed.length === Core.LEVELS.length ?
+          [{ action: 'thanks', label: '再看看小猫的感谢信', x: 85, y: 609, w: 220, h: 25 }] : []);
         return [
           { action: 'restart', label: '重新开始', x: 67, y: 515, w: 256, h: 46 },
           { action: 'undo', label: this.game.remainingTools('undo') ? '撤回一步继续玩，剩余 ' + this.game.remainingTools('undo') + ' 次' : '撤回次数已用完',
@@ -284,7 +307,8 @@
       const ctx = this.ctx;
       const chapter = this.screen === 'levels' ? this.chapter : Core.chapterFor(this.game.level.number).number;
       const owned = new Set(this.progress.decorations(chapter).map(item => item.id));
-      const garden = chapter === 2, study = this.chapterInfo(chapter).theme === 'study';
+      const theme = this.chapterInfo(chapter).theme;
+      const garden = theme === 'garden', study = theme === 'study', terrace = theme === 'terrace';
       Art.box(ctx, 104, 90, 98, 89, 30, study ? '#dce2eb' : '#e7eee0');
       Art.box(ctx, 112, 98, 82, 73, 24, '#f7f5e6');
       ctx.save(); Art.rounded(ctx, 116, 102, 74, 65, 21); ctx.clip();
@@ -299,12 +323,13 @@
       ctx.restore();
       Art.box(ctx, 98, 176, 110, 8, 3, '#dbcdb1');
       Art.box(ctx, 84, 163, 9, 24, 2, '#c7ba9d'); Art.box(ctx, 94, 167, 8, 20, 2, '#a5bca1');
-      const furniture = study ? ['clock', 'vase', 'books', 'readingLamp', 'rug'] : garden ? ['chime', 'flowers', 'can', 'stand', 'mat'] : ['picture', 'plant', 'basket', 'lamp', 'cushion'];
+      const furniture = terrace ? ['bunting', 'herbPot', 'picnicBasket', 'welcomeSign', 'sunMat'] : study ? ['clock', 'vase', 'books', 'readingLamp', 'rug'] : garden ? ['chime', 'flowers', 'can', 'stand', 'mat'] : ['picture', 'plant', 'basket', 'lamp', 'cushion'];
       [[57, 115, 43], [54, 169, 47], [214, 167, 46], [342, 155, 43], [276, 178, 86]].forEach((position, index) => {
         if (owned.has(furniture[index])) Art.decoration(ctx, furniture[index], ...position);
       });
       if (garden) { Art.ellipse(ctx, 143, 120, 10, 10, '#f2deb1'); Art.star(ctx, 342, 95, 5, '#dfc482'); }
       if (study) Art.star(ctx, 342, 95, 5, '#acb8cd');
+      if (terrace) { Art.ellipse(ctx, 137, 119, 11, 11, '#f4d295'); Art.star(ctx, 342, 95, 5, '#edbe80'); }
       const bounce = Math.sin(now / 1050) * 1.3;
       Art.companion(ctx, 276, 153 + bounce, 84, this.game.matches > 0 || owned.size > 0);
       Art.ellipse(ctx, 345, 184, 5, 4, '#dbc39b');
@@ -342,6 +367,9 @@
         if (age >= this.animation.duration) {
           const status = this.game.status; this.animation = null;
           if (status === 'won') this.audio('win');
+          if (status === 'won' && this.newDecoration && this.newDecoration.number === Core.LEVELS.length && this.pendingArrival) {
+            this.clearRoom(); this.modal = 'thanks';
+          }
           this.notify();
         }
       }
@@ -360,6 +388,7 @@
         this.drawLevels(now);
         if (this.modal === 'help') this.drawHelp();
         else if (this.modal === 'room') this.drawCollection(now);
+        else if (this.modal === 'thanks') this.drawThanks();
         ctx.restore(); return;
       }
       const level = this.game.level;
@@ -447,6 +476,7 @@
       }
       if (this.modal === 'help') this.drawHelp();
       else if (this.modal === 'room') this.drawCollection(now);
+      else if (this.modal === 'thanks') this.drawThanks();
       else if (this.game.status !== 'playing' && !animation) this.drawResult();
       ctx.restore();
     }
@@ -455,8 +485,8 @@
       const next = this.progress.nextDecoration(this.chapter);
       Core.CHAPTERS.forEach((chapter, index) => {
         const selected = chapter.number === this.chapter;
-        Art.box(ctx, 25 + index * 116, 214, 108, 34, 12, selected ? '#789970' : '#eeefdf');
-        text(ctx, chapter.name, 79 + index * 116, 231, 12, selected ? '#fffdf3' : '#87977d', '600', 'center');
+        Art.box(ctx, 25 + index * 86, 214, 82, 34, 12, selected ? '#789970' : '#eeefdf');
+        text(ctx, chapter.name, 66 + index * 86, 231, 11, selected ? '#fffdf3' : '#87977d', '600', 'center');
       });
       Art.box(ctx, 250, 260, 115, 32, 12, '#e6edda', '#d6e1c8');
       text(ctx, '我的小屋 ' + completed + '/5 ›', 307.5, 276, 11, '#678460', '600', 'center');
@@ -493,8 +523,9 @@
         }
       });
       this.button(25, 712, 340, 50, this.resumeLabel());
-      const message = this.toast && this.toast.until > now ? this.toast.message : '进度会自动记住，随时回来接着玩';
-      text(ctx, message, 195, 785, 10, '#98a58a', '400', 'center');
+      const finished = this.progress.state.completed.length === Core.LEVELS.length;
+      const message = finished ? '看看小猫的感谢信 ›' : this.toast && this.toast.until > now ? this.toast.message : '进度会自动记住，随时回来接着玩';
+      text(ctx, message, 195, 785, 11, finished ? '#75916a' : '#98a58a', finished ? '600' : '400', 'center');
       text(ctx, completed === 5 ? '小屋装满心意，谢谢你呀' : '每过一关，给小猫添一件小物', 195, 807, 10, '#b0b69f', '400', 'center');
     }
     drawCollection(now) {
@@ -550,6 +581,25 @@
       text(ctx, '每局撤回 3 次、提示 1 次，重来重置', 195, 516, 10, '#8c9880', '400', 'center');
       this.button(67, 535, 256, 46, '知道啦，开始收拾');
     }
+    drawThanks() {
+      const ctx = this.ctx;
+      this.overlay(28, 182, 334, 545);
+      text(ctx, '谢谢你，把小屋变成了家', 195, 224, 21, INK, '700', 'center');
+      text(ctx, Core.LEVELS.length + '关的陪伴，每一份心意都记住啦', 195, 255, 12, '#8c9a80', '400', 'center');
+      Art.ellipse(ctx, 195, 343, 92, 68, '#f5efd9');
+      Art.companion(ctx, 195, 342, 145, true, { wave: 0.75 });
+      [[111, 297, 8], [283, 309, 10], [266, 370, 6], [125, 378, 5], [236, 282, 5]].forEach(point => Art.star(ctx, point[0], point[1], point[2], '#e1bd70'));
+      [[64, '关卡完成', this.progress.state.completed.length], [204, '收到的心意', this.progress.decorations().length]].forEach(([x, label, count]) => {
+        Art.box(ctx, x, 430, 122, 59, 14, '#edf1df');
+        text(ctx, count + ' / ' + Core.LEVELS.length, x + 61, 450, 21, '#78916a', '700', 'center');
+        text(ctx, label, x + 61, 475, 11, '#8b9a7d', '400', 'center');
+      });
+      text(ctx, '从暖暖客厅，到晨光露台', 195, 521, 13, '#78916a', '600', 'center');
+      text(ctx, '你带来的每一件小物，都让这里更温暖', 195, 545, 11, '#8c9a80', '400', 'center');
+      this.button(67, 584, 256, 46, this.pendingArrival ? '带回最后一份心意' : '回到晨光露台');
+      this.button(67, 640, 256, 40, '回到选关', true);
+      text(ctx, this.screen === 'levels' ? '返回选关页面' : '返回通关画面', 195, 704, 11, '#8c9a80', '400', 'center');
+    }
     drawResult() {
       const ctx = this.ctx, won = this.game.status === 'won';
       const level = this.game.level, last = level.number === Core.LEVELS.length;
@@ -579,7 +629,7 @@
       } else {
         this.button(67, 570, 121, 38, '再玩这一关', true);
         this.button(202, 570, 121, 38, last ? '选择关卡' : this.pendingArrival ? '先去下一关' : '回小屋看看', true);
-        text(ctx, '第 ' + level.number + ' 关 · 消除 ' + this.game.matches + ' 组 · 取牌 ' + this.game.steps + ' 次', 195, 620, 10, '#a3ad93', '400', 'center');
+        text(ctx, last && this.progress.state.completed.length === Core.LEVELS.length ? '再看看小猫的感谢信 ›' : '第 ' + level.number + ' 关 · 消除 ' + this.game.matches + ' 组 · 取牌 ' + this.game.steps + ' 次', 195, 620, 10, last ? '#78916a' : '#a3ad93', last ? '600' : '400', 'center');
       }
     }
   }

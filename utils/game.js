@@ -9,7 +9,8 @@
   const CHAPTERS = [
     { number: 1, name: '暖暖客厅', first: 1, last: 5, theme: 'living' },
     { number: 2, name: '阳光花房', first: 6, last: 10, theme: 'garden' },
-    { number: 3, name: '月光书房', first: 11, last: 15, theme: 'study' }
+    { number: 3, name: '月光书房', first: 11, last: 15, theme: 'study' },
+    { number: 4, name: '晨光露台', first: 16, last: 20, theme: 'terrace' }
   ];
   function chapterFor(number) { return CHAPTERS.find(chapter => number >= chapter.first && number <= chapter.last); }
   const LEVELS = [
@@ -27,7 +28,12 @@
     { number: 12, name: '睡前小故事', difficulty: '高难 · 取舍', total: 60, kinds: 10, layers: 8, lockedSlots: 2, revision: 1, seed: 20262263, newKind: 9, note: '新伙伴：猫咪牛奶，给配对留出空位' },
     { number: 13, name: '花香伴晚安', difficulty: '极难 · 规划', total: 60, kinds: 11, layers: 9, lockedSlots: 2, revision: 1, seed: 20272414, newKind: 10, note: '新伙伴：蝴蝶结，分清每一组图案' },
     { number: 14, name: '时针轻轻走', difficulty: '极难 · 深层', total: 60, kinds: 12, layers: 9, lockedSlots: 2, revision: 1, seed: 20271743, newKind: 11, note: '新伙伴：羽毛玩具，先想两步再取牌' },
-    { number: 15, name: '灯下好梦来', difficulty: '极难 · 收官', total: 60, kinds: 13, layers: 10, lockedSlots: 2, revision: 1, seed: 20285550, newKind: 12, note: '新伙伴：小纸箱，把所有配对带回家' }
+    { number: 15, name: '灯下好梦来', difficulty: '极难 · 收官', total: 60, kinds: 13, layers: 10, lockedSlots: 2, revision: 1, seed: 20285550, newKind: 12, note: '新伙伴：小纸箱，把所有配对带回家' },
+    { number: 16, name: '晨光推开窗', difficulty: '极难 · 新图案', total: 60, kinds: 14, layers: 9, lockedSlots: 2, revision: 1, seed: 20292250, newKind: 13, note: '新伙伴：小鼠玩具，先找到完整的一组' },
+    { number: 17, name: '小草醒来啦', difficulty: '极难 · 取舍', total: 60, kinds: 15, layers: 9, lockedSlots: 2, revision: 1, seed: 20303731, newKind: 14, note: '新伙伴：猫草盆，给每一组留下空位' },
+    { number: 18, name: '把爱抱怀里', difficulty: '极难 · 规划', total: 60, kinds: 16, layers: 10, lockedSlots: 2, revision: 1, seed: 20303768, newKind: 15, note: '新伙伴：爱心抱枕，多看一步再动手' },
+    { number: 19, name: '星光挂起来', difficulty: '极难 · 深层', total: 60, kinds: 17, layers: 10, lockedSlots: 2, revision: 1, seed: 20306343, newKind: 16, note: '新伙伴：星星挂饰，把配对的线索连起来' },
+    { number: 20, name: '小屋就是家', difficulty: '极难 · 终章', total: 60, kinds: 18, layers: 11, lockedSlots: 2, revision: 1, seed: 20310548, newKind: 17, note: '新伙伴：小铃鼓，带着最后一份心意回家' }
   ];
   const TYPES = [
     { name: '橘猫', color: '#f5b66b', bg: '#fff0d9' },
@@ -42,7 +48,12 @@
     { name: '猫咪牛奶', color: '#83b2c5', bg: '#e7f4f7' },
     { name: '蝴蝶结', color: '#d497a8', bg: '#fbe9ee' },
     { name: '羽毛玩具', color: '#88b59a', bg: '#e8f5e9' },
-    { name: '小纸箱', color: '#ba9874', bg: '#f5ebdc' }
+    { name: '小纸箱', color: '#ba9874', bg: '#f5ebdc' },
+    { name: '小鼠玩具', color: '#a09aac', bg: '#eeeaf3' },
+    { name: '猫草盆', color: '#86a879', bg: '#edf4df' },
+    { name: '爱心抱枕', color: '#dc9b96', bg: '#fbe8e2' },
+    { name: '星星挂饰', color: '#d7b56d', bg: '#fff3d9' },
+    { name: '小铃鼓', color: '#c69a82', bg: '#f8e9df' }
   ];
   function random(seed) {
     let value = seed >>> 0;
@@ -124,7 +135,12 @@
         12: [base, shifted.slice(0, 10), center, shifted.slice(0, 8), cross, staggered, seven, [[60, 60], [180, 120], [60, 180]]],
         13: [base12, shifted.slice(0, 10), center, shifted.slice(0, 8), cross, inner, corners, staggered, [[120, 60], [120, 180], [240, 120]]],
         14: [base, shifted.slice(0, 10), center, shifted.slice(0, 7), seven, corners, inner, cross, [[120, 120]]],
-        15: [base12, shifted.slice(0, 10), center, shifted.slice(0, 6), cross, inner, corners, staggered, inner, [[120, 120]]]
+        15: [base12, shifted.slice(0, 10), center, shifted.slice(0, 6), cross, inner, corners, staggered, inner, [[120, 120]]],
+        16: [base, shifted.slice(0, 9), center, shifted.slice(0, 7), seven, corners, inner, staggered, [[120, 60], [120, 180]]],
+        17: [base12, shifted.slice(0, 10), center.filter(p => p[0] !== 120 || p[1] !== 120), shifted.slice(0, 8), cross, inner, corners, seven, [[90, 90], [150, 150]]],
+        18: [base, shifted.slice(0, 9), center.filter(p => p[0] !== 120 || p[1] !== 120), shifted.slice(0, 7), cross, inner, corners, staggered, inner, [[120, 120]]],
+        19: [base12, shifted.slice(0, 9), center, shifted.slice(0, 7), cross, corners, inner, seven, [[90, 90], [150, 150]], [[120, 120]]],
+        20: [base12, shifted.slice(0, 8), center.filter(p => p[0] !== 120 || p[1] !== 120), shifted.slice(0, 7), cross, inner, corners, staggered, inner, [[120, 60], [120, 180]], [[90, 90]]]
       };
       layouts[number].forEach((points, layer) => points.forEach(p => number > 5 ? add(240 - p[1], p[0], layer) : add(p[0], p[1], layer)));
     } else {

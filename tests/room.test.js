@@ -11,7 +11,7 @@ function win(view) {
   view.game.level.solution.forEach(id => { view.pick(id); view.animation = null; });
   assert.equal(view.game.status, 'won');
 }
-test('首次通关才获得对应装饰，十五关奖励自动保存且重玩不会重复发放', () => {
+test('首次通关才获得对应装饰，二十关奖励自动保存且重玩不会重复发放', () => {
   const storage = memory(), view = new GameView({ ctx: {}, storage });
   assert.deepEqual(view.progress.decorations(), []);
   assert.equal(view.progress.nextDecoration().id, 'cushion');
@@ -76,7 +76,7 @@ test('通关后可查看小屋、返回结算并进入下一关，集齐后主�
   assert.equal(view.screen, 'game'); assert.equal(view.game.status, 'won');
   view.press('next'); assert.equal(view.game.level.number, 2); assert.equal(view.modal, null);
   for (let number = 2; number <= DECORATIONS.length; number++) { win(view); if (number < DECORATIONS.length) view.press('next'); }
-  assert.deepEqual(view.controls().map(item => item.action), ['bring-home', 'restart', 'levels']);
+  assert.deepEqual(view.controls().map(item => item.action), ['bring-home', 'restart', 'levels', 'thanks']);
   view.press('bring-home'); assert.equal(view.screen, 'game'); assert.equal(view.modal, 'room');
   view.press('skip-arrival'); view.press('levels'); view.press('room');
   view.press('close'); assert.equal(view.progress.nextDecoration(), null);
@@ -138,7 +138,7 @@ test('家具回应限为一个，尊重静音，结束或关闭会清理且从�
   assert.deepEqual(view.game.moves, moves); assert.deepEqual(view.game.toolsUsed, tools);
 });
 
-test('十五关首次奖励各播放一次落位和欢迎，动画前已保存，结束后可直接继续', () => {
+test('二十关首次奖励各播放一次落位和欢迎，动画前已保存，结束后可直接继续', () => {
   const ctx = new Proxy({}, { get(target, key) { return key in target ? target[key] : () => {}; } });
   const storage = memory(), sounds = [], view = new GameView({ ctx, storage, playSound: name => sounds.push(name) });
   view.press('resume');
@@ -193,4 +193,60 @@ test('跳过、关闭、后台过期和重新打开均不重播欢迎，不丢�
     assert.equal(storage.read(KEY), saved);
     assert.equal(new Progress(storage).decorations().length, 1);
   }
+});
+
+function finalWin(storage, playSound) {
+  const ctx = new Proxy({}, { get(target, key) { return key in target ? target[key] : () => {}; } });
+  const view = new GameView({ ctx, storage, playSound }); view.press('resume');
+  assert.equal(view.game.level.number, DECORATIONS.length);
+  view.game.level.solution.slice(0, -1).forEach(id => { view.pick(id); view.animation = null; });
+  view.pick(view.game.level.solution[view.game.level.solution.length - 1]);
+  assert.equal(view.game.status, 'won'); assert.ok(view.animation);
+  return view;
+}
+test('首次二十关完成先保存最后奖励，取牌动画结束后感谢页再带回露台', () => {
+  const storage = memory({ version: 1, completed: Array.from({ length: 19 }, (_, i) => i + 1), currentLevel: 20 }), sounds = [];
+  const view = finalWin(storage, name => sounds.push(name)), animation = view.animation, saved = storage.read(KEY);
+  assert.equal(view.modal, null); assert.equal(new Progress(storage).decorations().length, 20);
+  assert.equal(view.newDecoration.id, 'welcomeSign'); assert.equal(view.pendingArrival.id, 'welcomeSign');
+  view.press('thanks'); assert.equal(view.modal, null, '正在飞入的最后一张牌要完成动画');
+  view.draw(animation.start + animation.duration - 1); assert.equal(view.modal, null);
+  view.draw(animation.start + animation.duration); assert.equal(view.animation, null); assert.equal(view.modal, 'thanks');
+  assert.deepEqual(view.controls().map(item => item.action), ['thank-room', 'thank-levels', 'close']);
+  assert.equal(storage.read(KEY), saved); assert.equal(sounds.filter(name => name === 'win').length, 1);
+  view.press('thank-room'); assert.equal(view.modal, 'room'); assert.equal(view.roomChapter, 4);
+  const arrival = view.roomArrival; assert.equal(arrival.id, 'welcomeSign'); assert.equal(view.pendingArrival, null);
+  view.draw(arrival.start + 800); assert.equal(view.roomReaction.id, 'welcomeSign');
+  view.draw(arrival.start + arrival.duration); assert.equal(view.roomArrival, null); assert.equal(view.roomReaction, null);
+  assert.equal(storage.read(KEY), saved); assert.equal(view.roomDecorations().length, 5);
+  view.press('close'); view.draw(arrival.start + 9000); assert.equal(view.modal, null);
+  view.press('room'); assert.equal(view.roomArrival, null); assert.equal(view.roomChapter, 4);
+});
+test('感谢页关闭和返回选关不重复自动弹出，收藏保留且手动查看不会补播仪式', () => {
+  for (const exit of ['close', 'thank-levels']) {
+    const storage = memory({ version: 1, completed: Array.from({ length: 19 }, (_, i) => i + 1), currentLevel: 20 });
+    const view = finalWin(storage), animation = view.animation;
+    view.draw(animation.start + animation.duration); assert.equal(view.modal, 'thanks');
+    const saved = storage.read(KEY); view.press(exit); assert.equal(view.modal, null);
+    view.draw(animation.start + 10000); assert.equal(view.modal, null);
+    assert.equal(storage.read(KEY), saved); assert.equal(new Progress(storage).decorations().length, 20);
+    if (exit === 'close') {
+      assert.equal(view.screen, 'game'); assert.equal(view.game.status, 'won');
+      assert.equal(view.pendingArrival.id, 'welcomeSign'); view.press('bring-home');
+      assert.equal(view.roomArrival.id, 'welcomeSign'); view.press('skip-arrival'); view.press('close');
+      view.press('room'); assert.equal(view.roomArrival, null);
+    } else {
+      assert.equal(view.screen, 'levels'); assert.equal(view.pendingArrival, null);
+      assert.ok(view.controls().some(item => item.action === 'thanks'));
+      view.press('thanks'); assert.equal(view.modal, 'thanks'); view.press('thank-room');
+      assert.equal(view.modal, 'room'); assert.equal(view.roomChapter, 4); assert.equal(view.roomArrival, null);
+    }
+    const restored = new GameView({ ctx: view.ctx, storage });
+    restored.draw(animation.start + 10000); assert.equal(restored.modal, null); assert.equal(restored.pendingArrival, null);
+    assert.ok(restored.controls().some(item => item.action === 'thanks'));
+    restored.press('thanks'); assert.equal(restored.modal, 'thanks'); restored.press('thank-room');
+    assert.equal(restored.roomChapter, 4); assert.equal(restored.roomArrival, null); assert.equal(storage.read(KEY), saved);
+  }
+  const incomplete = new GameView({ ctx: {}, storage: memory({ version: 1, completed: Array.from({ length: 19 }, (_, i) => i + 1) }) });
+  incomplete.press('thanks'); assert.equal(incomplete.modal, null);
 });

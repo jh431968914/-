@@ -77,12 +77,12 @@ test('微信旧存档自动显示全部装饰，缺少 ellipse 时仍能绘制�
   assert.equal(dev.runtime.view.screen, 'levels'); dev.runtime.destroy();
 });
 
-test('小游戏三间小屋的家具触摸适配安全区与小屏，取消不触发，后台归来不会留下过期动画', () => {
+test('小游戏四间小屋的家具触摸适配安全区与小屏，取消不触发，后台归来不会留下过期动画', () => {
   const storage = new Map([[KEY, JSON.stringify({ version: 1, completed: DECORATIONS.map(item => item.number), sound: false })]]);
   const dev = mock({ storage, noEllipse: true }), view = dev.runtime.view;
   dev.info.windowWidth = 320; dev.info.windowHeight = 640; dev.info.screenHeight = 640;
   dev.info.safeArea.bottom = 620; dev.callbacks.WindowResize();
-  for (const chapter of [1, 2, 3]) {
+  for (const chapter of [1, 2, 3, 4]) {
     view.press('chapter-' + chapter);
     dev.tap(307, 276);
     for (const item of view.roomDecorations()) {
@@ -130,4 +130,24 @@ test('小游戏首次奖励支持安全区内跳过与续关，旧 Canvas 和静
   dev.callbacks.Hide(); dev.callbacks.Show(); assert.equal(view.roomReaction, null);
   dev.tap(195, 732); assert.equal(view.game.level.number, 2); assert.equal(view.modal, null);
   assert.deepEqual(JSON.parse(dev.storage.get(KEY)).completed, [1]); dev.runtime.destroy();
+});
+
+test('小游戏小屏安全区内可操作二十关感谢页和最后露台奖励，静音旧Canvas正常绘制十八种牌', () => {
+  const storage = new Map([[KEY, JSON.stringify({ version: 1, completed: Array.from({ length: 19 }, (_, i) => i + 1), currentLevel: 20, sound: false })]]);
+  const dev = mock({ storage, noEllipse: true }), view = dev.runtime.view;
+  dev.info.windowWidth = 320; dev.info.windowHeight = 640; dev.info.screenHeight = 640;
+  dev.info.safeArea.bottom = 620; dev.callbacks.WindowResize();
+  view.press('resume'); assert.equal(view.game.level.number, 20); assert.equal(view.game.level.kinds, 18);
+  view.draw(Date.now());
+  view.game.level.solution.slice(0, -1).forEach(id => { view.pick(id); view.animation = null; });
+  view.pick(view.game.level.solution[view.game.level.solution.length - 1]);
+  view.draw(view.animation.start + view.animation.duration); assert.equal(view.modal, 'thanks');
+  const control = view.controls().find(item => item.action === 'thank-room');
+  dev.tap(control.x + control.w / 2, control.y + control.h / 2);
+  assert.equal(view.modal, 'room'); assert.equal(view.roomChapter, 4); assert.equal(view.roomArrival.id, 'welcomeSign');
+  view.draw(view.roomArrival.start + 1200); assert.equal(view.roomReaction.id, 'welcomeSign');
+  assert.ok(dev.sounds.every(sound => !sound.playing));
+  dev.callbacks.Hide(); view.roomArrival.start -= 5000; dev.callbacks.Show();
+  assert.equal(view.roomArrival, null); assert.equal(view.roomReaction, null);
+  assert.equal(JSON.parse(storage.get(KEY)).completed.length, 20); dev.runtime.destroy();
 });

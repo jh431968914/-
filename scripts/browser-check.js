@@ -111,11 +111,12 @@ async function main() {
       for (const id of level.solution) await pick(id);
       await statusMatches(new RegExp('第 ' + info.number + ' 关过关啦'));
       const reward = DECORATIONS[info.number - 1].name;
-      await statusMatches(new RegExp('获得' + reward + '，点击带回小屋'));
-      await page.locator('[data-key="action-bring-home"]').waitFor({ state: 'visible' });
+      const bringHome = info.number === LEVELS.length ? 'thank-room' : 'bring-home';
+      await statusMatches(new RegExp('获得' + reward + '，点击带回' + (info.number === LEVELS.length ? '最后一份心意' : '小屋')));
+      await page.locator('[data-key="action-' + bringHome + '"]').waitFor({ state: 'visible' });
       await screenshot('victory-' + info.number);
       {
-        await click('bring-home'); await click('skip-arrival');
+        await click(bringHome); await click('skip-arrival');
         await statusMatches(new RegExp('我的小屋，已收集 ' + (info.number - chapterFor(info.number).first + 1) + ' / 5 件装饰'));
         await statusMatches(new RegExp('已摆放：.*' + reward));
         if (info.number === 1) await screenshot('room-first');

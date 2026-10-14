@@ -12,8 +12,8 @@ function memory(data) {
   const values = new Map(data ? [[KEY, JSON.stringify(data)]] : []);
   return { read: key => values.get(key), write: (key, value) => values.set(key, value) };
 }
-test('前两章可用槽位按阶梯变化，高难第三章固定五格且点击不会解锁', () => {
-  assert.deepEqual(LEVELS.map(info => new Game(createCampaignLevel(info.number)).capacity), [7, 6, 6, 5, 5, 7, 6, 6, 5, 5, 5, 5, 5, 5, 5]);
+test('前两章可用槽位按阶梯变化，后两章固定五格且点击不会解锁', () => {
+  assert.deepEqual(LEVELS.map(info => new Game(createCampaignLevel(info.number)).capacity), [7, 6, 6, 5, 5, 7, 6, 6, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]);
   LEVELS.forEach(info => {
     const view = new GameView({ ctx: {}, storage: memory({ version: 1,
       completed: Array.from({ length: info.number - 1 }, (_, i) => i + 1), currentLevel: info.number }) });

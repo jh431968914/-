@@ -174,6 +174,44 @@
       ctx.save(); ctx.translate(-10, 10); ctx.scale(0.32, 0.32);
       ellipse(ctx, 0, 8, 10, 8, '#896644'); [[-10, -2], [-3, -10], [5, -10], [12, -2]].forEach(p => ellipse(ctx, p[0], p[1], 3.5, 4.5, '#896644')); ctx.restore();
     }
+    if (kind === 13) {
+      ctx.beginPath(); ctx.moveTo(15, 11); ctx.bezierCurveTo(38, 2, 23, -13, 29, -20);
+      ctx.strokeStyle = '#b2a995'; ctx.lineWidth = 2; ctx.stroke();
+      ellipse(ctx, -2, 7, 23, 14, '#bcb6a4', -0.16); ellipse(ctx, -16, -3, 7, 9, '#bcb6a4', -0.1);
+      ellipse(ctx, -16, -3, 4, 6, '#e4c5b5', -0.1); ellipse(ctx, -13, 7, 2, 2, '#52605a');
+      ellipse(ctx, -26, 12, 3, 2.5, '#b8817b'); stroke(ctx, [[-24, 16], [-16, 17]], '#e2dbcc', 1.5);
+      stroke(ctx, [[-2, -3], [5, 17]], '#e3ded0', 1.2);
+    }
+    if (kind === 14) {
+      [[-14, -25], [-5, -31], [4, -27], [14, -30], [21, -19]].forEach(([px, py], index) => {
+        stroke(ctx, [[(px - 2) * 0.45, 5], [px, py]], index % 2 ? '#7d9f70' : '#9eb47e', 2.2);
+        stroke(ctx, [[px, py + 9], [px - 6, py + 4]], '#9eb47e', 1.6);
+      });
+      ctx.beginPath(); ctx.moveTo(-21, -1); ctx.lineTo(21, -1); ctx.lineTo(15, 26); ctx.lineTo(-15, 26); ctx.closePath(); ctx.fillStyle = '#a2b782'; ctx.fill();
+      box(ctx, -23, -5, 46, 8, 3, '#c4d09d'); stroke(ctx, [[-15, 8], [-12, 20]], '#d8e2b6', 2);
+      ellipse(ctx, 5, 13, 5, 4, '#e3e8c7');
+    }
+    if (kind === 15) {
+      ctx.beginPath(); ctx.moveTo(0, -13); ctx.bezierCurveTo(-10, -30, -28, -24, -27, -7);
+      ctx.bezierCurveTo(-28, 8, -10, 21, 0, 29); ctx.bezierCurveTo(10, 21, 28, 8, 27, -7);
+      ctx.bezierCurveTo(28, -24, 10, -30, 0, -13); ctx.closePath(); ctx.fillStyle = '#da9b88'; ctx.fill();
+      ctx.strokeStyle = '#be7d71'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-17, -14); ctx.quadraticCurveTo(-22, -2, -15, 5); ctx.strokeStyle = '#efc1ae'; ctx.lineWidth = 3; ctx.stroke();
+      [[-11, 12], [11, 12], [0, 22]].forEach(p => ellipse(ctx, p[0], p[1], 1.4, 1.4, '#efc1ae'));
+    }
+    if (kind === 16) {
+      ctx.beginPath(); ctx.arc(0, -26, 4, 0, Math.PI * 2); ctx.strokeStyle = '#b79e70'; ctx.lineWidth = 1.8; ctx.stroke();
+      stroke(ctx, [[0, -22], [0, -12]], '#b79e70', 1.8); star(ctx, 0, 8, 28, '#dfbc6a'); star(ctx, 0, 8, 20, '#f4d995');
+      stroke(ctx, [[-8, 5], [-3, 0]], '#fff0c0', 2.5); ellipse(ctx, -4, 11, 1.3, 1.3, '#c3a05d'); ellipse(ctx, 4, 11, 1.3, 1.3, '#c3a05d');
+    }
+    if (kind === 17) {
+      ellipse(ctx, 0, 4, 26, 25, '#d5a291'); ellipse(ctx, 0, 0, 26, 24, '#ecc3a4'); ellipse(ctx, 0, 0, 21, 19, '#fff0d6');
+      [[-24, -2], [0, -23], [24, -2], [16, 21], [-16, 21]].forEach(([px, py]) => {
+        ellipse(ctx, px, py + 2, 4.5, 3, '#a5957a'); ellipse(ctx, px, py, 4.5, 3, '#dacdaf'); stroke(ctx, [[px - 2.5, py], [px + 2.5, py]], '#b9ac8e', 0.9);
+      });
+      ctx.save(); ctx.translate(0, 1); ctx.scale(0.4, 0.4); icon(ctx, 5, 0, 0, 55); ctx.restore();
+      stroke(ctx, [[-12, -11], [-5, -14]], '#f8dcc0', 2);
+    }
     ctx.restore();
   }
   function companion(ctx, x, y, size, happy, pose) {
@@ -341,6 +379,39 @@
       box(ctx, -21, 18, 21, 6, 1, '#c5af8e'); box(ctx, -19, 15, 18, 4, 1, '#fff2d8');
       star(ctx, 11, -12, 4, '#f8efc7');
     }
+    if (id === 'sunMat') {
+      ellipse(ctx, 0, 10, 31, 12, '#bc9874'); ellipse(ctx, 0, 6, 31, 12, '#e1ba91'); ellipse(ctx, 0, 5, 25, 8, '#f3dfb8');
+      [-23, -14, -5, 5, 14, 23].forEach(px => stroke(ctx, [[px, 14], [px, 18]], '#efcea8', 1.5));
+      ellipse(ctx, 0, 4, 5, 5, '#dfb671'); [[-9, 4, -7, 4], [7, 4, 9, 4], [0, -4, 0, -2], [0, 10, 0, 12]].forEach(p => stroke(ctx, [[p[0], p[1]], [p[2], p[3]]], '#dfb671', 1.3));
+    }
+    if (id === 'picnicBasket') {
+      ctx.beginPath(); ctx.arc(0, -5, 23, Math.PI, 0); ctx.strokeStyle = '#c2a17c'; ctx.lineWidth = 4; ctx.stroke();
+      box(ctx, -27, -2, 54, 27, 7, '#d4b38a'); box(ctx, -29, -5, 58, 7, 3, '#e4c59b');
+      box(ctx, -12, -5, 24, 26, 2, '#eee4c5'); [-8, 0, 8].forEach(px => stroke(ctx, [[px, -4], [px, 21]], '#ccada4', 1));
+      [-1, 7, 15].forEach(py => stroke(ctx, [[-11, py], [11, py]], '#ccada4', 1));
+      ellipse(ctx, -16, -12, 8, 7, '#c18d78'); stroke(ctx, [[-16, -18], [-14, -22]], '#a2a678', 2); ellipse(ctx, -11, -21, 4, 2, '#b1bd84', -0.3);
+      box(ctx, 6, -19, 15, 14, 4, '#e9c685'); stroke(ctx, [[10, -16], [17, -16]], '#f7e2b3', 1.5);
+      [-21, 21].forEach(px => stroke(ctx, [[px, 6], [px, 21]], '#bb9770', 1.2));
+    }
+    if (id === 'herbPot') {
+      [[-12, -22], [2, -29], [15, -21]].forEach(([px, py]) => {
+        stroke(ctx, [[0, 8], [px, py]], '#82a180', 1.8);
+        ellipse(ctx, px - 4, py + 6, 5, 8, '#9db793', -0.5); ellipse(ctx, px + 4, py + 2, 5, 8, '#c1cda1', 0.6);
+      });
+      box(ctx, -17, 4, 34, 25, 6, '#b1be95'); ellipse(ctx, 0, 4, 19, 5, '#d7dfb5'); stroke(ctx, [[-12, 12], [-10, 22]], '#dce3be', 2);
+    }
+    if (id === 'bunting') {
+      ctx.beginPath(); ctx.moveTo(-31, -12); ctx.quadraticCurveTo(0, 8, 31, -12); ctx.strokeStyle = '#b1a486'; ctx.lineWidth = 1.5; ctx.stroke();
+      [[-24, -8, '#d5a091'], [-9, -3, '#aabb94'], [8, -3, '#e2c083'], [23, -8, '#a2b9bd']].forEach(([px, py, color]) => {
+        ctx.beginPath(); ctx.moveTo(px - 6, py); ctx.lineTo(px + 6, py); ctx.lineTo(px, py + 20); ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+      });
+    }
+    if (id === 'welcomeSign') {
+      stroke(ctx, [[-13, 27], [-13, -12]], '#b89a75', 3.5); stroke(ctx, [[13, 27], [13, -12]], '#b89a75', 3.5);
+      box(ctx, -26, -27, 52, 42, 6, '#c8ab85'); box(ctx, -22, -23, 44, 34, 4, '#e5e8cc');
+      icon(ctx, 5, 0, -7, 27); star(ctx, -15, -16, 3, '#d6b474'); star(ctx, 15, 2, 3, '#d6b474');
+      stroke(ctx, [[-17, 26], [17, 26]], '#d5bb96', 4);
+    }
     ctx.restore();
   }
   function roomLayout(x, y, width, height) {
@@ -365,10 +436,11 @@
   function isometricRoom(ctx, x, y, width, height, owned, reaction, arrival, theme) {
     ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 1;
     const { sx, sy, sz, project } = roomLayout(x, y, width, height);
-    const garden = theme === 'garden', study = theme === 'study';
+    const garden = theme === 'garden', study = theme === 'study', terrace = theme === 'terrace';
     const gardenItems = { cushion: 'mat', basket: 'can', plant: 'flowers', picture: 'chime', lamp: 'stand' };
     const studyItems = { cushion: 'rug', basket: 'books', plant: 'vase', picture: 'clock', lamp: 'readingLamp' };
-    const itemId = id => study ? studyItems[id] : garden ? gardenItems[id] : id;
+    const terraceItems = { cushion: 'sunMat', basket: 'picnicBasket', plant: 'herbPot', picture: 'bunting', lamp: 'welcomeSign' };
+    const itemId = id => terrace ? terraceItems[id] : study ? studyItems[id] : garden ? gardenItems[id] : id;
     const has = id => owned.has(itemId(id));
     const elapsed = reaction ? reaction.elapsed : 0;
     const smooth = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
@@ -425,8 +497,22 @@
       const u = (Math.round(v * 2) % 3) + 1;
       stroke(ctx, [project(u, v - 0.5, 0.01), project(u, v, 0.01)], '#dac29c', 0.6);
     }
-    polygon([project(0, 0), project(0, 5), project(0, 5, 3), project(0, 0, 3)], study ? '#dce1e8' : garden ? '#dce8d5' : '#eee9da', '#ddd7c6');
-    polygon([project(0, 0), project(6, 0), project(6, 0, 3), project(0, 0, 3)], study ? '#eee7dd' : garden ? '#f1eed7' : '#f7efdf', '#e3dac5');
+    if (terrace) {
+      const sky = project(2.4, 0.2, 2.25);
+      ellipse(ctx, sky[0], sky[1], sx * 4.4, sx * 1.5, '#eef1df');
+      const sun = project(4.4, 0.02, 2.45);
+      ellipse(ctx, sun[0], sun[1], sx * 0.65, sx * 0.65, '#f8edcc'); ellipse(ctx, sun[0], sun[1], sx * 0.4, sx * 0.4, '#f1d29c');
+      const cloud = project(1.7, 0.02, 2.4);
+      ellipse(ctx, cloud[0], cloud[1], sx * 0.52, sx * 0.18, '#fffdf0'); ellipse(ctx, cloud[0] + sx * 0.3, cloud[1] - sx * 0.12, sx * 0.28, sx * 0.18, '#fffdf0');
+      for (let u = 0; u <= 6; u += 0.75) block(u, 0, 0, 0.09, 0.13, 1.1, '#fff7e3', '#e5d9ba', '#d4c4a2');
+      for (let v = 0.75; v <= 5; v += 0.75) block(0, v, 0, 0.13, 0.09, 1.1, '#fff7e3', '#e5d9ba', '#d4c4a2');
+      block(0, 0, 1.08, 6.1, 0.16, 0.12, '#fff9e8', '#e3d4b5', '#d4c4a2');
+      block(0, 0, 1.08, 0.16, 5.1, 0.12, '#fff9e8', '#e3d4b5', '#d4c4a2');
+      polygon([project(2.1, 0.2, 0.01), project(3.9, 0.2, 0.01), project(5.6, 3.8, 0.01), project(3.7, 3.8, 0.01)], '#f0e3bf');
+    } else {
+      polygon([project(0, 0), project(0, 5), project(0, 5, 3), project(0, 0, 3)], study ? '#dce1e8' : garden ? '#dce8d5' : '#eee9da', '#ddd7c6');
+      polygon([project(0, 0), project(6, 0), project(6, 0, 3), project(0, 0, 3)], study ? '#eee7dd' : garden ? '#f1eed7' : '#f7efdf', '#e3dac5');
+    }
     if (garden) {
       [0.35, 1.9, 3.45].forEach(v => {
         polygon([project(0.02, v, 0.65), project(0.02, v + 1.25, 0.65), project(0.02, v + 1.25, 2.72), project(0.02, v, 2.72)], '#edf1dc', '#adc5a7');
@@ -439,6 +525,7 @@
     function windowPane(u1, u2, z1, z2, fill) {
       polygon([project(u1, 0.02, z1), project(u2, 0.02, z1), project(u2, 0.02, z2), project(u1, 0.02, z2)], fill);
     }
+    if (!terrace) {
     windowPane(1.2, 3.95, 1.03, 2.65, '#fff9e8'); windowPane(1.38, 3.77, 1.18, 2.5, study ? '#8095b2' : '#cddfc5');
     windowPane(1.38, 3.77, 1.18, 1.6, study ? '#7289a8' : '#c1d7bb');
     if (study) {
@@ -453,12 +540,14 @@
     block(1.04, 0, 0.94, 3.07, 0.28, 0.1, '#e2caa2', '#cbb28c', '#d3ba95');
     block(0.65, 0.58, 0, 0.19, 0.42, 0.64, study ? '#aebcca' : '#b8c59e', study ? '#879eb2' : '#98ad88', study ? '#98acbd' : '#a7b794');
     block(0.91, 0.58, 0, 0.15, 0.42, 0.48, '#e3cb9f', '#c7b18a', '#d4c096');
+    }
     if (has('picture')) {
       beginFurniture('picture');
-      if (garden || study) {
+      if (garden || study || terrace) {
         const p = project(0.08, 3.07, 1.61);
+        if (terrace) [2.1, 4.05].forEach(v => stroke(ctx, [project(0.1, v, 0), project(0.1, v, 1.85)], '#c4ad87', 1.7));
         ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('picture') * pulse * (study ? 0.025 : 0.12));
-        decoration(ctx, itemId('picture'), 0, 0, sx * (study ? 1.35 : 1.6)); ctx.restore();
+        decoration(ctx, itemId('picture'), 0, 0, sx * (terrace ? 1.9 : study ? 1.35 : 1.6)); ctx.restore();
         if (study && active('picture')) star(ctx, p[0] + sx * 0.65, p[1] - sx * 0.45, sx * 0.12 * strength, '#dac294');
       } else {
         stroke(ctx, [project(0.04, 2.45, 2.15), project(0.04, 3.08, 2.49), project(0.04, 3.7, 2.15)], '#cbb794', 1);
@@ -474,7 +563,7 @@
     // Furniture is painted from the back of the room towards the cat in front.
     if (has('plant')) {
       beginFurniture('plant');
-      if (garden || study) {
+      if (garden || study || terrace) {
         shadow(0.85, 3.55, 0.52, 0.4); const p = project(0.83, 3.53, 0.65);
         ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('plant') * pulse * 0.04);
         decoration(ctx, itemId('plant'), 0, 0, sx * 1.7); ctx.restore();
@@ -500,6 +589,10 @@
         const p = project(5, 0.95, 0.74); shadow(5, 0.95, 0.7, 0.5);
         decoration(ctx, 'stand', p[0], p[1], sx * 1.9);
         if (active('lamp')) star(ctx, p[0] + sx * 0.7, p[1] - sx * 0.7, sx * 0.16 * strength, '#d9b568');
+      } else if (terrace) {
+        const p = project(5, 0.95, 0.75); shadow(5, 0.95, 0.7, 0.5);
+        decoration(ctx, 'welcomeSign', p[0], p[1], sx * 1.9);
+        if (active('lamp')) [-1, 1].forEach(side => star(ctx, p[0] + sx * 0.72 * side, p[1] - sx * 0.85, sx * 0.15 * strength, '#dfbd77'));
       } else if (study) {
         const p = project(5, 0.95, 0.83), warmth = active('lamp'); shadow(5, 0.95, 0.7, 0.5);
         const light = project(4.6, 2.4);
@@ -527,10 +620,10 @@
     }
     if (has('basket')) {
       beginFurniture('basket');
-      if (garden || study) {
+      if (garden || study || terrace) {
         const p = project(2.27, 3.37, 0.6); shadow(2.28, 3.35, 0.78, 0.47);
         ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('basket') * (study ? pulse * 0.025 : -0.13));
-        decoration(ctx, itemId('basket'), 0, 0, sx * (study ? 1.65 : 1.4)); ctx.restore();
+        decoration(ctx, itemId('basket'), 0, 0, sx * (study || terrace ? 1.65 : 1.4)); ctx.restore();
       } else {
         shadow(2.28, 3.35, 0.78, 0.47);
         block(1.7, 2.9, 0, 1.14, 0.94, 0.35, '#e1c7a0', '#d4b68d', '#c2a179');
@@ -549,9 +642,9 @@
     shadow(4.13, 3.15, 1.03, 0.88);
     if (has('cushion')) {
       beginFurniture('cushion');
-      floorRound(3.15, 2.4, 0.02, 1.98, 1.5, 0.24, study ? '#8496ac' : garden ? '#91a47a' : '#bf9283');
-      floorRound(3.15, 2.4, 0.21, 1.98, 1.5, 0.24, study ? '#b6c1d4' : garden ? '#b5c391' : '#d8a697');
-      floorRound(3.27, 2.51, 0.24, 1.74, 1.28, 0.2, study ? '#e7e3d3' : garden ? '#dce2b1' : '#e9c1b0');
+      floorRound(3.15, 2.4, 0.02, 1.98, 1.5, 0.24, terrace ? '#bc9874' : study ? '#8496ac' : garden ? '#91a47a' : '#bf9283');
+      floorRound(3.15, 2.4, 0.21, 1.98, 1.5, 0.24, terrace ? '#e1ba91' : study ? '#b6c1d4' : garden ? '#b5c391' : '#d8a697');
+      floorRound(3.27, 2.51, 0.24, 1.74, 1.28, 0.2, terrace ? '#f3dfb8' : study ? '#e7e3d3' : garden ? '#dce2b1' : '#e9c1b0');
       if (study) {
         const p = project(4.05, 3.75, 0.25); star(ctx, p[0], p[1], sx * 0.14, '#b09b77');
         stroke(ctx, [project(3.35, 2.4, 0.22), project(3.35, 2.21, 0.22)], '#c7d0dc', 1.4);
@@ -573,6 +666,8 @@
       ctx.translate(ball[0], ball[1]);
       if (garden) {
         [0, 1, 2].forEach(i => ellipse(ctx, -i * sx * 0.13, -sx * (0.2 + (elapsed / 700 + i / 3) % 1), sx * 0.045, sx * 0.07, '#87b7b4'));
+      } else if (terrace) {
+        ctx.rotate(pulse * 0.08); icon(ctx, 8, 0, 0, sx * 0.64);
       } else if (study) {
         ctx.rotate(pulse * 0.12);
         const pageWidth = sx * 0.42, pageHeight = sx * 0.34;

@@ -24,7 +24,7 @@ async function main() {
       await page.clock.pauseAt(new Date('2026-10-13T08:00:01Z'));
       const click = action => page.locator('[data-key="action-' + action + '"]').click();
       const status = () => page.locator('#live-status').textContent();
-      const shot = name => page.screenshot({ path: path.resolve(__dirname, '../tests/arrival-v12-' + name + '-' + size + '.png'), fullPage: true });
+      const shot = name => page.screenshot({ path: path.resolve(__dirname, '../tests/arrival-v13-' + name + '-' + size + '.png'), fullPage: true });
       await page.goto('http://127.0.0.1:4173', { waitUntil: 'load' });
       for (const item of DECORATIONS) {
         const level = createCampaignLevel(item.number);
@@ -35,11 +35,12 @@ async function main() {
         await click('resume');
         await page.locator('[data-key="tile-' + level.solution.at(-1) + '"]').click();
         await page.clock.runFor(500);
-        assert.match(await status(), /点击带回小屋/);
+        assert.match(await status(), item.number === LEVELS.length ? /感谢界面/ : /点击带回小屋/);
         const saved = await page.evaluate(key => localStorage.getItem(key), KEY);
         assert.ok(JSON.parse(saved).completed.includes(item.number));
         if (item.number === 1) await shot('reward');
-        await click('bring-home');
+        if (item.number === LEVELS.length) await shot('thanks');
+        await click(item.number === LEVELS.length ? 'thank-room' : 'bring-home');
         assert.match(await status(), /正在轻轻落位/);
         assert.equal(await page.locator('[data-key="action-collection-' + item.id + '"]').isDisabled(), true);
         await page.clock.runFor(400); await shot(item.id + '-landing');

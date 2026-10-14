@@ -76,7 +76,7 @@ test('提示从玩家实际局面搜索，不依赖原始通关顺序', () => {
   route.forEach(id => assert.ok(game.pick(id).ok)); assert.equal(game.status, 'won');
 });
 function highIdFixture() {
-  const level = fixture(Array.from({ length: 108 }, (_, id) => Math.floor(id / 3) % 13));
+  const level = fixture(Array.from({ length: 108 }, (_, id) => Math.floor(id / 3) % TYPES.length));
   level.lockedSlots = 2;
   level.tiles[0].blockers = [96];
   level.tiles[2].blockers = [98];
@@ -104,7 +104,7 @@ test('多段位掩码不混淆跨32、64和96的图块或遮挡，偏离证书�
   assert.deepEqual(route.slice().sort((a, b) => a - b), level.tiles.filter(tile => before.alive[tile.id]).map(tile => tile.id));
   assert.equal(new Set(route).size, route.length);
   assert.ok(route.includes(32) && route.includes(64) && route.includes(98) && route.includes(101));
-  assert.ok(route.some(id => level.tiles[id].kind >= 8), '搜索涵盖第三章新增的图案种类');
+  assert.ok(route.some(id => level.tiles[id].kind >= 13), '搜索涵盖第四章新增的图案种类');
   assert.deepEqual(game.alive, before.alive); assert.deepEqual(game.moves, before.moves);
   assert.deepEqual(game.tray, before.tray); assert.deepEqual(game.toolsUsed, before.toolsUsed);
   assert.deepEqual(game.hint(), route); assert.equal(game.remainingTools('hint'), 0);

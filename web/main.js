@@ -55,12 +55,15 @@
     status.textContent += ' ' + chapter.name + '，第 ' + chapter.first + ' 至 ' + chapter.last + ' 关。';
     if (view.modal === 'room') {
       status.textContent += ' 我的小屋，已收集 ' + owned.length + ' / 5 件装饰。' +
-        (chapter.theme === 'study' ? '月光书房有夜蓝窗、暖木地板和陪你读故事的猫咪。' : '等距视角的小屋有两面墙、木地板和坐在小窝里的猫咪。') +
+        (chapter.theme === 'terrace' ? '晨光露台有木栏杆、柔和阳光和迎着微风的小猫。' : chapter.theme === 'study' ? '月光书房有夜蓝窗、暖木地板和陪你读故事的猫咪。' : '等距视角的小屋有两面墙、木地板和坐在小窝里的猫咪。') +
         (owned.length ? '已摆放：' + owned.map(item => item.name).join('、') + '。' : '小屋还在等待第一件装饰。') +
         (nextReward ? '通过第 ' + nextReward.number + ' 关获得' + nextReward.name + '。' : '五件装饰已全部收集。');
       if (view.roomArrival) status.textContent += ' 新家具入屋：' + view.roomGift.name + (view.roomArrival.welcomed ? '已放好，小猫来欢迎啦。' : '正在轻轻落位，可跳过动画。');
       status.textContent += view.roomReaction ? ' 小猫回应：' + view.roomReaction.message : view.roomArrival ? '' :
         owned.length ? ' 点击家具或下方收藏卡片，陪小猫互动。' : '';
+    } else if (view.modal === 'thanks') {
+      status.textContent += ' 感谢界面：谢谢你，把小屋变成了家。' + MeowGame.LEVELS.length + '关的陪伴，每一份心意都记住啦。已完成 ' + view.progress.state.completed.length + ' / ' + MeowGame.LEVELS.length + ' 关，收到 ' + view.progress.decorations().length + ' 份心意。';
+      if (view.pendingArrival) status.textContent += ' 获得' + view.pendingArrival.name + '，点击带回最后一份心意。';
     } else if (menu) {
       status.textContent += ' 已收集 ' + owned.length + ' / 5 件装饰。' + (nextReward ? '下一件奖励：' + nextReward.name + '。' : '小屋装饰已集齐。');
     } else if (view.game.status === 'won') {
@@ -68,10 +71,11 @@
       status.textContent += view.pendingArrival ? ' 获得' + reward.name + '，点击带回小屋，看看小猫的欢迎。' :
         view.newDecoration ? ' 获得' + reward.name + '，已自动摆进小屋。' : ' 小屋已摆放' + reward.name + '。';
     }
-    canvas.setAttribute('aria-label', view.modal === 'room' ? '等距视角猫咪小屋与装饰收藏' : menu ? '猫咪小屋与关卡选择' : '猫咪叠层三消棋盘');
-    document.getElementById('chapter-number').textContent = String(menu ? chapter.number : view.game.level.number).padStart(2, '0');
-    document.getElementById('chapter-title').textContent = menu ? chapter.name : view.game.level.name;
-    document.getElementById('chapter-subtitle').textContent = menu ? '通关添小物 · 已收集 ' + owned.length + ' / 5' : view.game.level.tiles.length + ' 张 · ' + view.game.level.kinds + ' 种图案 · ' + view.game.level.layers + ' 层堆叠';
+    const thanks = view.modal === 'thanks';
+    canvas.setAttribute('aria-label', thanks ? '二十关通关感谢界面，小猫感谢你的陪伴' : view.modal === 'room' ? '等距视角猫咪小屋与装饰收藏' : menu ? '猫咪小屋与关卡选择' : '猫咪叠层三消棋盘');
+    document.getElementById('chapter-number').textContent = String(thanks ? MeowGame.LEVELS.length : menu ? chapter.number : view.game.level.number).padStart(2, '0');
+    document.getElementById('chapter-title').textContent = thanks ? '谢谢你的陪伴' : menu ? chapter.name : view.game.level.name;
+    document.getElementById('chapter-subtitle').textContent = thanks ? MeowGame.LEVELS.length + ' 关完成 · ' + view.progress.decorations().length + ' 份心意' : menu ? '通关添小物 · 已收集 ' + owned.length + ' / 5' : view.game.level.tiles.length + ' 张 · ' + view.game.level.kinds + ' 种图案 · ' + view.game.level.layers + ' 层堆叠';
   }
   function resize() {
     const rect = canvas.getBoundingClientRect();
