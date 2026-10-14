@@ -128,7 +128,7 @@ test('本地试玩服务能返回页面、脚本，并拒绝非预览目录', as
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const url = 'http://127.0.0.1:' + server.address().port;
-  const page = await fetch(url); assert.equal(page.status, 200); assert.match(await page.text(), /喵喵消消屋/);
+  const page = await fetch(url); assert.equal(page.status, 200); assert.match(await page.text(), /猫猫消消屋/);
   const script = await fetch(url + '/utils/game.js'); assert.equal(script.status, 200);
   assert.equal((await fetch(url + '/package.json')).status, 404);
   assert.equal((await fetch(url + '/web/..%2f..%2fpackage.json')).status, 404);

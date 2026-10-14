@@ -26,7 +26,7 @@ function createServer() {
 if (require.main === module) {
   const port = Number(process.env.PORT || 4173);
   createServer().listen(port, '127.0.0.1', () => {
-    console.log('喵喵消消屋试玩：http://127.0.0.1:' + port);
+    console.log('猫猫消消屋试玩：http://127.0.0.1:' + port);
   });
 }
 module.exports = { createServer };

@@ -364,7 +364,7 @@
       ctx.fillStyle = '#f8f5ed'; ctx.fillRect(0, 0, this.width, this.height);
       ctx.translate(this.offsetX, this.offsetY); ctx.scale(this.scale, this.scale);
       Art.icon(ctx, 5, 37, 34, 23);
-      text(ctx, '喵喵消消屋', 58, 34, 21, INK, '700');
+      text(ctx, '猫猫消消屋', 58, 34, 21, INK, '700');
       text(ctx, '把小小烦恼，消成快乐', 25, 67, 11, '#8f9d87');
       Art.box(ctx, 297, 17, 34, 34, 17, '#eeeee2');
       Art.box(ctx, 341, 17, 34, 34, 17, '#eeeee2');

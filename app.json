@@ -1,7 +1,7 @@
 {
   "pages": ["pages/game/game"],
   "window": {
-    "navigationBarTitleText": "喵喵消消屋",
+    "navigationBarTitleText": "猫猫消消屋",
     "navigationBarBackgroundColor": "#f8f5ed",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#f8f5ed"

@@ -37,7 +37,7 @@ async function main() {
   try {
     await openPage();
     assert.ok(await page.locator('#background-music').evaluate(music => music.paused && music.loop));
-    assert.equal(await page.title(), '喵喵消消屋 · ' + LEVELS.length + ' 关体验版');
+    assert.equal(await page.title(), '猫猫消消屋 · ' + LEVELS.length + ' 关体验版');
     await statusMatches(new RegExp('已通关 0 / ' + LEVELS.length + ' 关，已解锁 1 关'));
     await statusMatches(/已收集 0 \/ 5 件装饰。下一件奖励：暖暖软垫/);
     for (let number = 2; number <= 5; number++) assert.ok(await page.locator('[data-key="action-level-' + number + '"]').isDisabled());
