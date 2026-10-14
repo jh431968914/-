@@ -414,6 +414,70 @@
     }
     ctx.restore();
   }
+  function roomPreviewBackground(ctx, theme) {
+    ctx.save(); rounded(ctx, 25, 86, 340, 112, 18); ctx.clip();
+    const study = theme === 'study', garden = theme === 'garden', terrace = theme === 'terrace';
+    ctx.fillStyle = terrace ? '#e7eff0' : study ? '#ede9e3' : garden ? '#e6efdf' : '#f5ebdc';
+    ctx.fillRect(25, 86, 340, 112);
+    ctx.fillStyle = terrace ? '#ecdaba' : study ? '#e4dacb' : garden ? '#e4dfc7' : '#ebdcc2';
+    ctx.fillRect(25, 174, 340, 24);
+    if (terrace) {
+      ctx.fillStyle = '#f5eed7'; ctx.fillRect(25, 144, 340, 30);
+      ellipse(ctx, 155, 119, 23, 23, '#fbf0d3'); ellipse(ctx, 155, 119, 15, 15, '#efd298');
+      ellipse(ctx, 74, 111, 26, 7, '#fffdf1'); ellipse(ctx, 92, 107, 14, 10, '#fffdf1');
+      ellipse(ctx, 342, 123, 22, 6, '#fffdf1');
+      ellipse(ctx, 66, 166, 68, 15, '#d6dfc1'); ellipse(ctx, 220, 167, 92, 18, '#dfe5c9');
+      [36, 76, 116, 156, 196, 236, 276, 316, 356].forEach(x => {
+        box(ctx, x - 2, 162, 5, 26, 2, '#d8c5a2'); stroke(ctx, [[x - 1, 164], [x - 1, 186]], '#f5e7ca', 1);
+      });
+      box(ctx, 25, 160, 340, 7, 3, '#d1bc95'); box(ctx, 25, 184, 340, 4, 2, '#dcc9a7');
+      stroke(ctx, [[25, 195], [365, 195]], '#decaa5', 1);
+    } else if (garden) {
+      box(ctx, 94, 91, 132, 84, 12, '#b9cdb0'); box(ctx, 99, 96, 122, 74, 8, '#eff5e6');
+      ctx.save(); rounded(ctx, 99, 96, 122, 74, 8); ctx.clip();
+      ctx.fillStyle = '#e2efe7'; ctx.fillRect(99, 96, 122, 74);
+      ellipse(ctx, 192, 111, 11, 11, '#f1dda7');
+      ellipse(ctx, 133, 169, 51, 19, '#c6ddbb'); ellipse(ctx, 214, 163, 49, 22, '#d4e4c2');
+      [[113, 152], [132, 148], [179, 155], [203, 146]].forEach(([x, y]) => {
+        stroke(ctx, [[x, y + 12], [x, y]], '#b8cba3', 1.3);
+        ellipse(ctx, x, y, 3, 3, '#f9f3d8');
+      });
+      stroke(ctx, [[108, 104], [120, 98]], '#fafdf0', 2); stroke(ctx, [[169, 106], [181, 100]], '#fafdf0', 2);
+      [140, 181].forEach(x => stroke(ctx, [[x, 95], [x, 171]], '#c2d3b7', 3));
+      stroke(ctx, [[99, 133], [221, 133]], '#c2d3b7', 3); ctx.restore();
+      stroke(ctx, [[86, 101], [88, 153]], '#bdcead', 1.5);
+      [[86, 109, -0.5], [91, 122, 0.5], [84, 138, -0.5]].forEach(([x, y, rotation]) => ellipse(ctx, x, y, 4, 7, '#c0d2b0', rotation));
+      box(ctx, 90, 173, 140, 6, 3, '#c9d4b4');
+      ctx.beginPath(); ctx.moveTo(132, 180); ctx.lineTo(187, 180); ctx.lineTo(232, 198); ctx.lineTo(179, 198); ctx.closePath(); ctx.fillStyle = '#f3edcf'; ctx.fill();
+    } else if (study) {
+      box(ctx, 104, 93, 98, 84, 23, '#c7cfdd'); box(ctx, 111, 100, 84, 70, 17, '#f9f5e8');
+      ctx.save(); rounded(ctx, 116, 105, 74, 60, 13); ctx.clip();
+      ctx.fillStyle = '#7f93b1'; ctx.fillRect(116, 105, 74, 60);
+      ellipse(ctx, 136, 122, 11, 11, '#fff0c9'); ellipse(ctx, 142, 118, 10, 10, '#7f93b1');
+      [[173, 118, 3], [169, 152, 2], [126, 154, 1.8]].forEach(([x, y, size]) => star(ctx, x, y, size, '#eee4c6'));
+      stroke(ctx, [[153, 104], [153, 166]], '#f9f5e8', 4); stroke(ctx, [[115, 137], [191, 137]], '#f9f5e8', 4); ctx.restore();
+      box(ctx, 98, 176, 110, 6, 3, '#c3b19a');
+      box(ctx, 205, 111, 27, 63, 3, '#cfbea5'); box(ctx, 209, 115, 19, 55, 1, '#e1d4bf');
+      [118, 143].forEach((y, row) => {
+        [['#a3b5c9', 14], ['#c9b28f', 18], ['#a9b89e', 16]].forEach(([fill, height], index) => box(ctx, 210 + index * 6, y + 19 - height, 5, height, 1, row && index === 1 ? '#c5a6a2' : fill));
+        box(ctx, 207, y + 20, 24, 3, 1, '#bcaa90');
+      });
+      box(ctx, 84, 163, 9, 24, 2, '#bbab95'); box(ctx, 94, 167, 8, 20, 2, '#9eafbe');
+    } else {
+      stroke(ctx, [[97, 93], [215, 93]], '#c4ad88', 3);
+      box(ctx, 104, 96, 98, 80, 21, '#d6c099'); box(ctx, 111, 102, 84, 67, 15, '#fff7e7');
+      ctx.save(); rounded(ctx, 116, 107, 74, 58, 11); ctx.clip();
+      ctx.fillStyle = '#e1ece2'; ctx.fillRect(116, 107, 74, 58);
+      ellipse(ctx, 184, 132, 26, 25, '#d0dfcb'); ellipse(ctx, 137, 167, 36, 17, '#c6d7bc');
+      stroke(ctx, [[153, 106], [153, 166]], '#fff7e7', 4); stroke(ctx, [[115, 137], [191, 137]], '#fff7e7', 4); ctx.restore();
+      [98, 200].forEach(x => {
+        box(ctx, x, 96, 10, 75, 4, '#e1c49f');
+        stroke(ctx, [[x + 3, 101], [x + 3, 166]], '#edd7b7', 1.2);
+      });
+      box(ctx, 98, 176, 110, 7, 3, '#c8ae85');
+    }
+    ctx.restore();
+  }
   function roomLayout(x, y, width, height) {
     const sx = Math.min((width - 24) / 11.6, (height - 16) / 9.8);
     const sy = sx * 0.52, sz = sx * 1.26;
@@ -720,5 +784,5 @@
     }
     ctx.closePath(); ctx.fillStyle = color; ctx.fill();
   }
-  return { INK, rounded, box, ellipse, stroke, icon, companion, plant, decoration, roomLayout, isometricRoom, tool, star };
+  return { INK, rounded, box, ellipse, stroke, icon, companion, plant, decoration, roomPreviewBackground, roomLayout, isometricRoom, tool, star };
 });

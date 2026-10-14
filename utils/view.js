@@ -309,27 +309,14 @@
       const owned = new Set(this.progress.decorations(chapter).map(item => item.id));
       const theme = this.chapterInfo(chapter).theme;
       const garden = theme === 'garden', study = theme === 'study', terrace = theme === 'terrace';
-      Art.box(ctx, 104, 90, 98, 89, 30, study ? '#dce2eb' : '#e7eee0');
-      Art.box(ctx, 112, 98, 82, 73, 24, '#f7f5e6');
-      ctx.save(); Art.rounded(ctx, 116, 102, 74, 65, 21); ctx.clip();
-      ctx.fillStyle = study ? '#8295b3' : '#deeadc'; ctx.fillRect(116, 102, 74, 65);
-      if (study) {
-        Art.ellipse(ctx, 135, 120, 10, 10, '#fff0c7'); Art.ellipse(ctx, 140, 117, 9, 9, '#8295b3');
-        Art.star(ctx, 174, 119, 3, '#eadfb9'); Art.star(ctx, 167, 157, 2, '#eadfb9');
-      } else {
-        Art.ellipse(ctx, 183, 124, 25, 30, '#c8dbc6'); Art.ellipse(ctx, 137, 164, 31, 19, '#c1d3b8');
-      }
-      Art.stroke(ctx, [[153, 98], [153, 174]], '#f7f5e6', 5); Art.stroke(ctx, [[112, 135], [194, 135]], '#f7f5e6', 5);
-      ctx.restore();
-      Art.box(ctx, 98, 176, 110, 8, 3, '#dbcdb1');
-      Art.box(ctx, 84, 163, 9, 24, 2, '#c7ba9d'); Art.box(ctx, 94, 167, 8, 20, 2, '#a5bca1');
+      Art.roomPreviewBackground(ctx, theme);
       const furniture = terrace ? ['bunting', 'herbPot', 'picnicBasket', 'welcomeSign', 'sunMat'] : study ? ['clock', 'vase', 'books', 'readingLamp', 'rug'] : garden ? ['chime', 'flowers', 'can', 'stand', 'mat'] : ['picture', 'plant', 'basket', 'lamp', 'cushion'];
       [[57, 115, 43], [54, 169, 47], [214, 167, 46], [342, 155, 43], [276, 178, 86]].forEach((position, index) => {
         if (owned.has(furniture[index])) Art.decoration(ctx, furniture[index], ...position);
       });
-      if (garden) { Art.ellipse(ctx, 143, 120, 10, 10, '#f2deb1'); Art.star(ctx, 342, 95, 5, '#dfc482'); }
+      if (garden) Art.star(ctx, 342, 95, 5, '#dfc482');
       if (study) Art.star(ctx, 342, 95, 5, '#acb8cd');
-      if (terrace) { Art.ellipse(ctx, 137, 119, 11, 11, '#f4d295'); Art.star(ctx, 342, 95, 5, '#edbe80'); }
+      if (terrace) Art.star(ctx, 342, 95, 5, '#edbe80');
       const bounce = Math.sin(now / 1050) * 1.3;
       Art.companion(ctx, 276, 153 + bounce, 84, this.game.matches > 0 || owned.size > 0);
       Art.ellipse(ctx, 345, 184, 5, 4, '#dbc39b');
