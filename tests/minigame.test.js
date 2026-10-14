@@ -23,7 +23,7 @@ function mock(options) {
       sounds.push(sound); return sound;
     }
   };
-  for (const name of ['TouchStart', 'TouchEnd', 'TouchCancel', 'Hide', 'Show', 'WindowResize']) {
+  for (const name of ['TouchStart', 'TouchMove', 'TouchEnd', 'TouchCancel', 'Hide', 'Show', 'WindowResize']) {
     api['on' + name] = fn => { callbacks[name] = fn; };
     api['off' + name] = fn => { if (callbacks[name] === fn) delete callbacks[name]; };
   }
@@ -101,6 +101,40 @@ test('小游戏四间小屋的家具触摸适配安全区与小屏，取消不�
   }
   assert.ok(dev.sounds.every(sound => !sound.playing));
   dev.runtime.destroy();
+});
+
+test('小游戏小屏安全区内支持箭头与左右滑动，拖过家具不触发回应或写入存档', () => {
+  const storage = new Map([[KEY, JSON.stringify({ version: 1, completed: Array.from({ length: 10 }, (_, i) => i + 1), sound: false })]]);
+  const dev = mock({ storage, noEllipse: true }), view = dev.runtime.view;
+  dev.info.windowWidth = 320; dev.info.windowHeight = 640; dev.info.screenHeight = 640; dev.info.safeArea.bottom = 620;
+  dev.callbacks.WindowResize(); view.press('chapter-1'); view.press('room');
+  const saved = storage.get(KEY);
+  dev.tap(340, 310); assert.equal(view.roomChapter, 2);
+  const swipe = (x, y, endX, endY) => {
+    const start = dev.contact(x, y), end = dev.contact(endX, endY);
+    dev.callbacks.TouchStart({ touches: [start] }); dev.callbacks.TouchMove({ touches: [end] }); dev.callbacks.TouchEnd({ changedTouches: [end] });
+  };
+  swipe(103, 468, 285, 472); assert.equal(view.roomChapter, 1); assert.equal(view.roomReaction, null);
+  swipe(280, 310, 100, 310); assert.equal(view.roomChapter, 2);
+  swipe(280, 310, 100, 310); assert.equal(view.roomChapter, 3);
+  swipe(280, 310, 100, 310); assert.equal(view.roomChapter, 3);
+  view.draw(Date.now()); assert.equal(storage.get(KEY), saved); assert.ok(dev.sounds.every(sound => !sound.playing));
+  dev.runtime.destroy();
+});
+
+test('小屋取消、多指、往返拖动、后台和缩放中断均不切换房间或误点家具', () => {
+  const storage = new Map([[KEY, JSON.stringify({ version: 1, completed: [1, 2, 3, 4, 5], sound: false })]]);
+  const dev = mock({ storage }), view = dev.runtime.view;
+  view.press('chapter-1'); view.press('room');
+  const start = dev.contact(280, 468), end = dev.contact(100, 468);
+  const begin = () => dev.callbacks.TouchStart({ touches: [start] });
+  const finish = () => dev.callbacks.TouchEnd({ changedTouches: [end] });
+  begin(); dev.callbacks.TouchCancel(); finish();
+  begin(); dev.callbacks.TouchMove({ touches: [start, end] }); finish();
+  begin(); dev.callbacks.TouchMove({ touches: [end] }); dev.callbacks.TouchEnd({ changedTouches: [start] });
+  begin(); dev.callbacks.Hide(); dev.callbacks.Show(); finish();
+  begin(); dev.callbacks.WindowResize(); finish();
+  assert.equal(view.roomChapter, 1); assert.equal(view.roomReaction, null); dev.runtime.destroy();
 });
 
 test('小游戏背景音乐首次操作启动，切换与通知不重播，静音、后台和卸载正确处理', () => {

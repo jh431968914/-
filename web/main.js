@@ -3,16 +3,20 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const layer = document.getElementById('interaction-layer');
+  const phone = canvas.parentElement;
   const status = document.getElementById('live-status');
   const audio = new MeowAudio.AudioManager(name => name === 'bgm' ? document.getElementById('background-music') : new Audio('/assets/audio/' + name + '.wav'));
   let frame = null;
   const targets = new Map();
+  const activePointers = new Set();
+  let pointerStart = null, suppressPointerClick = false;
   const view = new MeowView.GameView({ ctx, onChange: sync,
     storage: { read: key => localStorage.getItem(key), write: (key, value) => localStorage.setItem(key, value) },
     playSound: name => audio.playSound(name) });
   audio.setEnabled(view.sound);
   function sync() {
     audio.setEnabled(view.sound);
+    phone.classList.toggle('room-open', view.modal === 'room');
     layer.setAttribute('aria-busy', String(!!view.animation));
     const focused = document.activeElement;
     const desired = [];
@@ -61,6 +65,8 @@
       if (view.roomArrival) status.textContent += ' 新家具入屋：' + view.roomGift.name + (view.roomArrival.welcomed ? '已放好，小猫来欢迎啦。' : '正在轻轻落位，可跳过动画。');
       status.textContent += view.roomReaction ? ' 小猫回应：' + view.roomReaction.message : view.roomArrival ? '' :
         owned.length ? ' 点击家具或下方收藏卡片，陪小猫互动。' : '';
+      const navigation = view.roomNavigation();
+      if (navigation.index >= 0 && navigation.rooms.length > 1) status.textContent += ' 第 ' + (navigation.index + 1) + ' / ' + navigation.rooms.length + ' 间已解锁小屋，可左右滑动、点击箭头或按左右方向键切换。';
     } else if (view.modal === 'thanks') {
       status.textContent += ' 感谢界面：谢谢你，把小屋变成了家。' + MeowGame.LEVELS.length + '关的陪伴，每一份心意都记住啦。已完成 ' + view.progress.state.completed.length + ' / ' + MeowGame.LEVELS.length + ' 关，收到 ' + view.progress.decorations().length + ' 份心意。';
       if (view.pendingArrival) status.textContent += ' 获得' + view.pendingArrival.name + '，点击带回最后一份心意。';
@@ -78,6 +84,7 @@
     document.getElementById('chapter-subtitle').textContent = thanks ? MeowGame.LEVELS.length + ' 关完成 · ' + view.progress.decorations().length + ' 份心意' : menu ? '通关添小物 · 已收集 ' + owned.length + ' / 5' : view.game.level.tiles.length + ' 张 · ' + view.game.level.kinds + ' 种图案 · ' + view.game.level.layers + ' 层堆叠';
   }
   function resize() {
+    cancelPointers();
     const rect = canvas.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 3);
     canvas.width = Math.round(rect.width * dpr); canvas.height = Math.round(rect.height * dpr);
@@ -85,19 +92,51 @@
     view.resize(rect.width, rect.height); view.draw(Date.now()); sync();
   }
   function tick() { view.draw(Date.now()); frame = requestAnimationFrame(tick); }
-  canvas.addEventListener('pointerup', event => {
-    const rect = canvas.getBoundingClientRect(); view.pointer(event.clientX - rect.left, event.clientY - rect.top); audio.activate(view.sound);
-  });
+  function cancelPointers() { pointerStart = null; activePointers.clear(); suppressPointerClick = true; }
+  function point(event) {
+    const rect = canvas.getBoundingClientRect(); return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  }
+  window.addEventListener('pointerdown', event => {
+    if (!phone.contains(event.target) && activePointers.size === 0) return;
+    activePointers.add(event.pointerId);
+    if (activePointers.size !== 1 || event.button !== 0) { pointerStart = null; suppressPointerClick = true; return; }
+    suppressPointerClick = false; pointerStart = Object.assign({ id: event.pointerId }, point(event));
+  }, true);
+  window.addEventListener('pointermove', event => {
+    if (!pointerStart || pointerStart.id !== event.pointerId) return;
+    const end = point(event);
+    if (Math.hypot(end.x - pointerStart.x, end.y - pointerStart.y) > 12) pointerStart.moved = true;
+  }, true);
+  window.addEventListener('pointerup', event => {
+    const start = pointerStart;
+    activePointers.delete(event.pointerId); pointerStart = null;
+    if (!start || start.id !== event.pointerId) return;
+    const end = point(event);
+    if (start.moved || Math.hypot(end.x - start.x, end.y - start.y) > 12) {
+      suppressPointerClick = true;
+      if (view.swipe(start.x, start.y, end.x, end.y)) audio.activate(view.sound);
+    } else if (event.target === canvas) {
+      view.pointer(end.x, end.y); audio.activate(view.sound);
+    }
+  }, true);
+  window.addEventListener('pointercancel', cancelPointers, true);
+  phone.addEventListener('click', event => {
+    if (suppressPointerClick && event.detail !== 0) { event.preventDefault(); event.stopImmediatePropagation(); }
+  }, true);
+  window.addEventListener('blur', cancelPointers);
   window.addEventListener('keydown', event => {
+    if (view.modal === 'room' && !event.ctrlKey && !event.metaKey && !event.altKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+      event.preventDefault(); if (view.switchRoom(event.key === 'ArrowLeft' ? -1 : 1)) audio.activate(view.sound);
+    }
     if (event.key === 'Escape' && view.modal) view.press('close');
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); view.undo(); audio.activate(view.sound); }
   });
   document.addEventListener('visibilitychange', () => {
     audio.setVisible(!document.hidden);
-    if (document.hidden) { cancelAnimationFrame(frame); frame = null; }
+    if (document.hidden) { cancelPointers(); cancelAnimationFrame(frame); frame = null; }
     else if (frame === null) tick();
   });
-  window.addEventListener('pagehide', () => audio.setVisible(false));
+  window.addEventListener('pagehide', () => { cancelPointers(); audio.setVisible(false); });
   window.addEventListener('pageshow', () => audio.setVisible(!document.hidden));
   new ResizeObserver(resize).observe(canvas);
   resize(); tick();

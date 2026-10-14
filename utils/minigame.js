@@ -28,11 +28,17 @@ class MiniGameRuntime {
     this.resize();
     this.handlers = {
       TouchStart: event => { this.touchStart = event.touches && event.touches.length === 1 ? this.point(event.touches[0]) : null; },
+      TouchMove: event => {
+        if (!event.touches || event.touches.length !== 1) { this.touchStart = null; return; }
+        const point = this.point(event.touches[0]);
+        if (this.touchStart && point && Math.hypot(point.x - this.touchStart.x, point.y - this.touchStart.y) > 12) this.touchStart.moved = true;
+      },
       TouchEnd: event => {
         const start = this.touchStart; this.touchStart = null;
-        if (!start || !this.visible || !event.changedTouches || event.changedTouches.length !== 1) return;
+        if (!start || !this.visible || !event.changedTouches || event.changedTouches.length !== 1 || (event.touches && event.touches.length)) return;
         const point = this.point(event.changedTouches[0]);
-        if (point && Math.hypot(point.x - start.x, point.y - start.y) <= 12) {
+        if (point && this.view.swipe(start.x, start.y, point.x, point.y)) this.audio.activate(this.view.sound);
+        else if (point && !start.moved && Math.hypot(point.x - start.x, point.y - start.y) <= 12) {
           this.view.pointer(point.x, point.y); this.audio.activate(this.view.sound);
         }
       },

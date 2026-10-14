@@ -51,6 +51,7 @@ Page({
     this._canvas.height = Math.round(height * dpr);
     this._ctx.scale(dpr, dpr);
     this._view.resize(width, height);
+    this._touchStart = null;
   },
   updateCanvasBounds() {
     this.createSelectorQuery().select('#gameCanvas').boundingClientRect().exec(result => {
@@ -82,14 +83,20 @@ Page({
     this._touchStart = event.touches && event.touches.length === 1 ? this.touchPoint(event.touches[0]) : null;
   },
   onTouchCancel() { this._touchStart = null; },
+  onTouchMove(event) {
+    if (!event.touches || event.touches.length !== 1) { this._touchStart = null; return; }
+    const point = this.touchPoint(event.touches[0]);
+    if (this._touchStart && point && Math.hypot(point.x - this._touchStart.x, point.y - this._touchStart.y) > 12) this._touchStart.moved = true;
+  },
   onTouchEnd(event) {
     const start = this._touchStart;
     this._touchStart = null;
-    if (!this._view || !start || !event.changedTouches || event.changedTouches.length !== 1) return;
+    if (!this._view || !this._visible || !start || !event.changedTouches || event.changedTouches.length !== 1 || (event.touches && event.touches.length)) return;
     const point = this.touchPoint(event.changedTouches[0]);
-    if (!point || Math.hypot(point.x - start.x, point.y - start.y) > 12) return;
-    this._view.pointer(point.x, point.y);
-    this._audio.activate(this._view.sound);
+    if (point && this._view.swipe(start.x, start.y, point.x, point.y)) this._audio.activate(this._view.sound);
+    else if (point && !start.moved && Math.hypot(point.x - start.x, point.y - start.y) <= 12) {
+      this._view.pointer(point.x, point.y); this._audio.activate(this._view.sound);
+    }
   },
   onShow() { this._visible = true; if (this._audio) this._audio.setVisible(true); this.startFrames(); },
   onHide() {

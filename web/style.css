@@ -29,6 +29,7 @@ h1 span { color: #7f9c6d; }
 .play-area { display: grid; justify-items: center; position: relative; padding: 8px 20px 0; }
 .play-area::before { position: absolute; content: ""; z-index: -1; width: 440px; height: 82%; top: 8%; border-radius: 48% 48% 38% 38%; background: #e0e8d6; }
 .phone { position: relative; width: min(390px, calc((100svh - 82px) * 390 / 824)); aspect-ratio: 390 / 824; min-width: 280px; border-radius: 28px; background: #f8f5ed; overflow: hidden; outline: 7px solid #fffdf580; box-shadow: 0 25px 70px #516c3b12, 0 4px 14px #516c3b0a; }
+.phone.room-open { touch-action: none; }
 #game { display: block; width: 100%; height: 100%; touch-action: manipulation; }
 #interaction-layer { position: absolute; inset: 0; pointer-events: none; }
 .hit-target { position: absolute; border: 0; background: transparent; border-radius: 11px; padding: 0; cursor: pointer; pointer-events: auto; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }

@@ -42,7 +42,8 @@ async function main() {
           for (const other of CHAPTERS.filter(item => item.number !== chapter.number)) {
             for (const item of chapterDecorations(other.number)) assert.ok(!status.includes(item.name));
           }
-          assert.equal(await page.locator('[data-key^="action-"]').count(), count * 2 + 1);
+          const navigationCount = chapter.number > 1 || chapter.first - 1 + count >= 5 ? 2 : 0;
+          assert.equal(await page.locator('[data-key^="action-"]').count(), count * 2 + 1 + navigationCount);
           assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
           const state = count === 5 ? 'complete' : count === 0 ? 'empty' : count === 1 ? 'first' : 'three';
           await shot(chapter.number + '-' + state);

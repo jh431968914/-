@@ -121,12 +121,12 @@ test('家具回应限为一个，尊重静音，结束或关闭会清理且从�
     view.press('furniture-' + item.id); view.press('collection-cushion');
     assert.equal(view.roomReaction, reaction, '连续点击不重启动画或排队');
     assert.equal(view.animation, null);
-    assert.ok(view.controls().filter(control => control.action !== 'close').every(control => control.disabled));
+    assert.ok(view.controls().filter(control => /^(furniture|collection)-/.test(control.action)).every(control => control.disabled));
     view.draw(reaction.start + 850);
     assert.equal(view.roomReaction, reaction);
     view.draw(reaction.start + reaction.duration);
     assert.equal(view.roomReaction, null);
-    assert.ok(view.controls().every(control => !control.disabled));
+    assert.ok(view.controls().filter(control => /^(furniture|collection)-/.test(control.action)).every(control => !control.disabled));
   }
   assert.deepEqual(sounds, []);
   view.sound = true; view.press('collection-basket');
@@ -136,6 +136,77 @@ test('家具回应限为一个，尊重静音，结束或关闭会清理且从�
   view.press('furniture-picture'); view.press('levels'); assert.equal(view.roomReaction, null);
   assert.equal(storage.read(KEY), saved);
   assert.deepEqual(view.game.moves, moves); assert.deepEqual(view.game.toolsUsed, tools);
+});
+
+test('小屋箭头按通关进度切换已解锁房间，首尾不可越界，未解锁章节仍可静态预览', () => {
+  for (const completed of [0, 4, 5, 9, 10, 14, 15, 20]) {
+    const view = new GameView({ ctx: {}, storage: memory({ version: 1, completed: Array.from({ length: completed }, (_, i) => i + 1) }) });
+    view.press('chapter-1'); view.press('room');
+    const count = Math.min(4, Math.floor(completed / 5) + 1);
+    assert.equal(view.roomNavigation().rooms.length, count);
+    assert.equal(view.roomNavigationControls().length, count === 1 ? 0 : 2);
+    view.press('room-prev'); assert.equal(view.roomChapter, 1);
+    for (let chapter = 2; chapter <= count; chapter++) {
+      view.press('room-next'); assert.equal(view.roomChapter, chapter);
+      assert.equal(view.roomDecorations().length, Math.max(0, Math.min(5, completed - (chapter - 1) * 5)));
+    }
+    view.press('room-next'); assert.equal(view.roomChapter, count);
+    if (count > 1) assert.equal(view.roomNavigationControls().find(control => control.action === 'room-next').disabled, true);
+    if (count < 4) {
+      view.press('close'); view.press('chapter-4'); view.press('room');
+      assert.equal(view.roomChapter, 4);
+      view.press('room-next'); assert.equal(view.roomChapter, 4);
+      view.press('room-prev'); assert.equal(view.roomChapter, count);
+    }
+  }
+});
+
+test('小屋横向滑动在缩放后方向正确，短拖动、纵向、斜向和弹窗外手势不切换', () => {
+  const view = new GameView({ ctx: {}, width: 320, height: 560,
+    storage: memory({ version: 1, completed: Array.from({ length: 15 }, (_, i) => i + 1) }) });
+  const swipe = (x, y, endX, endY) => view.swipe(view.offsetX + x * view.scale, view.offsetY + y * view.scale,
+    view.offsetX + endX * view.scale, view.offsetY + endY * view.scale);
+  view.press('chapter-1'); view.press('room');
+  assert.equal(swipe(270, 310, 90, 315), true); assert.equal(view.roomChapter, 2);
+  for (const coordinates of [[195, 220, 195, 400], [270, 310, 180, 480], [200, 310, 170, 310],
+    [10, 300, 170, 300], [90, 300, 380, 300], [90, 732, 270, 732]]) {
+    assert.equal(swipe(...coordinates), false); assert.equal(view.roomChapter, 2);
+  }
+  assert.equal(swipe(90, 468, 270, 472), true); assert.equal(view.roomChapter, 1); assert.equal(view.roomReaction, null);
+  assert.equal(swipe(90, 310, 270, 310), false);
+  view.press('close'); assert.equal(swipe(270, 310, 90, 310), false);
+  view.press('room-next'); assert.equal(view.roomChapter, 1);
+});
+
+test('浏览其他小屋清理家具回应，保留原章节、进行中牌局、道具、声音和存档', () => {
+  const storage = memory({ version: 1, completed: Array.from({ length: 10 }, (_, i) => i + 1), sound: false });
+  const view = new GameView({ ctx: {}, storage });
+  view.press('resume'); view.pick(view.game.available()[0].id); view.animation = null; view.press('hint'); view.press('levels');
+  const saved = storage.read(KEY), game = view.game, moves = game.moves.slice(), tools = Object.assign({}, game.toolsUsed);
+  view.press('room'); assert.equal(view.roomChapter, 3);
+  view.press('room-prev'); assert.equal(view.roomChapter, 2);
+  view.press('collection-mat'); assert.equal(view.roomReaction.id, 'mat');
+  view.press('room-prev'); assert.equal(view.roomChapter, 1); assert.equal(view.roomReaction, null);
+  assert.equal(view.roomDecorations()[0].id, 'cushion');
+  view.press('close'); assert.equal(view.chapter, 3); assert.equal(view.screen, 'levels');
+  assert.equal(view.game, game); assert.deepEqual(game.moves, moves); assert.deepEqual(game.toolsUsed, tools);
+  assert.equal(view.sound, false); assert.equal(storage.read(KEY), saved);
+  view.press('room'); assert.equal(view.roomChapter, 3);
+});
+
+test('首次欢迎动画期间暂停小屋导航，结束后浏览不丢礼物且仍可继续原来的下一关', () => {
+  const view = new GameView({ ctx: {}, storage: memory({ version: 1, completed: [1, 2, 3, 4], sound: false }) });
+  view.press('resume'); win(view); view.press('bring-home');
+  const saved = view.progress.storage.read(KEY), arrival = view.roomArrival, gift = view.roomGift;
+  assert.equal(gift.id, 'lamp'); assert.ok(view.roomNavigationControls().every(control => control.disabled));
+  view.press('room-next'); assert.equal(view.roomChapter, 1); assert.equal(view.roomArrival, arrival);
+  assert.equal(view.swipe(270, 310, 90, 310), false);
+  view.press('skip-arrival'); view.press('room-next'); assert.equal(view.roomChapter, 2);
+  assert.equal(view.roomGift, gift); assert.equal(view.roomDecorations().length, 0);
+  assert.ok(view.controls().some(control => control.action === 'next' && control.label === '继续第 6 关'));
+  view.press('room-prev'); assert.equal(view.roomChapter, 1); assert.equal(view.roomArrival, null);
+  assert.equal(view.progress.storage.read(KEY), saved);
+  view.press('next'); assert.equal(view.game.level.number, 6); assert.equal(view.modal, null);
 });
 
 test('二十关首次奖励各播放一次落位和欢迎，动画前已保存，结束后可直接继续', () => {

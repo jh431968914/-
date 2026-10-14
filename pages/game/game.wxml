@@ -1,3 +1,3 @@
 <view class="game-page" style="padding-bottom: {{safeBottom}}px;">
-  <canvas id="gameCanvas" type="2d" class="game-canvas" bindtouchstart="onTouchStart" bindtouchcancel="onTouchCancel" bindtouchend="onTouchEnd" disable-scroll="true" aria-label="猫咪叠层三消游戏"></canvas>
+  <canvas id="gameCanvas" type="2d" class="game-canvas" bindtouchstart="onTouchStart" bindtouchmove="onTouchMove" bindtouchcancel="onTouchCancel" bindtouchend="onTouchEnd" disable-scroll="true" aria-label="猫咪叠层三消游戏"></canvas>
 </view>

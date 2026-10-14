@@ -81,6 +81,38 @@
     chapterInfo(number) { return Core.CHAPTERS.find(item => item.number === (number == null ? this.chapter : number)); }
     chapterLevels() { const chapter = this.chapterInfo(); return Core.LEVELS.slice(chapter.first - 1, chapter.last); }
     roomDecorations() { return this.progress.decorations(this.roomChapter); }
+    roomNavigation() {
+      const rooms = Core.CHAPTERS.filter(chapter => this.progress.canOpen(chapter.first));
+      return { rooms, index: rooms.findIndex(chapter => chapter.number === this.roomChapter),
+        previous: rooms.filter(chapter => chapter.number < this.roomChapter).pop(),
+        next: rooms.find(chapter => chapter.number > this.roomChapter) };
+    }
+    roomNavigationControls() {
+      const navigation = this.roomNavigation();
+      if (navigation.rooms.length === 1 && navigation.index === 0) return [];
+      return [
+        { action: 'room-prev', label: navigation.previous ? '上一间小屋：' + navigation.previous.name : '已经是第一间已解锁的小屋',
+          x: 28, y: 286, w: 44, h: 48, disabled: !navigation.previous || !!this.roomArrival },
+        { action: 'room-next', label: navigation.next ? '下一间小屋：' + navigation.next.name : '已经是最后一间已解锁的小屋',
+          x: 318, y: 286, w: 44, h: 48, disabled: !navigation.next || !!this.roomArrival }
+      ];
+    }
+    switchRoom(direction) {
+      if (this.modal !== 'room' || this.roomArrival) return false;
+      const navigation = this.roomNavigation(), target = direction === -1 ? navigation.previous : direction === 1 ? navigation.next : null;
+      if (!target) return false;
+      this.roomChapter = target.number; this.roomReaction = null;
+      this.audio('tap'); this.notify(); return true;
+    }
+    swipe(startX, startY, endX, endY) {
+      if (this.modal !== 'room') return false;
+      const x = (startX - this.offsetX) / this.scale, y = (startY - this.offsetY) / this.scale;
+      const end = { x: (endX - this.offsetX) / this.scale, y: (endY - this.offsetY) / this.scale };
+      const inside = (px, py) => px >= 23 && px <= 367 && py >= 98 && py < 703;
+      const dx = end.x - x, dy = end.y - y;
+      if (!inside(x, y) || !inside(end.x, end.y) || Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.5) return false;
+      return this.switchRoom(dx < 0 ? 1 : -1);
+    }
     clearRoom() { this.roomReaction = null; this.roomArrival = null; this.roomGift = null; }
     reset() {
       this.game.reset(); this.animation = null; this.hintId = null; this.modal = null;
@@ -197,6 +229,7 @@
       }
       if (action === 'bring-home') { if (this.pendingArrival && !this.animation && this.game.status === 'won') this.openRoom(); return; }
       if (action === 'skip-arrival') { this.skipArrival(); return; }
+      if (action === 'room-prev' || action === 'room-next') { this.switchRoom(action === 'room-prev' ? -1 : 1); return; }
       if (action.indexOf('furniture-') === 0) { this.interactFurniture(action.slice(10)); return; }
       if (action.indexOf('collection-') === 0) { this.interactFurniture(action.slice(11)); return; }
       if (action.indexOf('locked-slot-') === 0) { this.say('这个空位暂未开放'); this.notify(); return; }
@@ -223,9 +256,9 @@
       if (this.modal === 'room') {
         const owned = this.roomDecorations(), disabled = !!(this.roomReaction || this.roomArrival);
         const targets = Art.roomLayout(ROOM.x, ROOM.y, ROOM.w, ROOM.h).targets;
-        return owned.map(item => Object.assign({}, targets.find(target => target.id === (item.spot || item.id)), {
+        return this.roomNavigationControls().concat(owned.map(item => Object.assign({}, targets.find(target => target.id === (item.spot || item.id)), {
           action: 'furniture-' + item.id, label: '点击' + item.name + '，' + REACTIONS[item.id].label, disabled
-        })).concat(owned.map(item => ({ action: 'collection-' + item.id,
+        })), owned.map(item => ({ action: 'collection-' + item.id,
           label: item.name + '，' + REACTIONS[item.id].label, x: 42, y: 449 + (item.number - this.chapterInfo(this.roomChapter).first) * 44, w: 306, h: 38, disabled })),
         this.roomExitControls());
       }
@@ -517,15 +550,25 @@
     }
     drawCollection(now) {
       const ctx = this.ctx, owned = this.roomDecorations(), next = this.progress.nextDecoration(this.roomChapter);
+      const navigation = this.roomNavigation();
+      const gift = this.roomGift && Core.chapterFor(this.roomGift.number).number === this.roomChapter ? this.roomGift : null;
       this.overlay(23, 98, 344, 687);
-      text(ctx, this.roomGift ? '新家具到家啦' : this.chapterInfo(this.roomChapter).name, 48, 134, 22, INK, '700');
+      text(ctx, gift ? '新家具到家啦' : this.chapterInfo(this.roomChapter).name, 48, 134, 22, INK, '700');
       Art.box(ctx, 280, 119, 60, 28, 14, '#e8eedc');
       text(ctx, owned.length + ' / 5', 310, 133, 12, '#75916a', '600', 'center');
-      text(ctx, this.roomGift ? this.roomGift.name + '，让小屋又暖了一点' : '一点点收拾，一点点变成喜欢的样子', 48, 163, 12, '#8c9a80');
+      text(ctx, gift ? gift.name + '，让小屋又暖了一点' : navigation.index < 0 ? '这间小屋尚未解锁，先去收拾已开启的小屋吧' : navigation.rooms.length > 1 ?
+        '第 ' + (navigation.index + 1) + ' / ' + navigation.rooms.length + ' 间 · 左右滑动或点箭头' : '一点点收拾，一点点变成喜欢的样子', 48, 163, 12, '#8c9a80');
       const reaction = this.roomReaction, arrival = this.roomArrival;
       Art.isometricRoom(ctx, ROOM.x, ROOM.y, ROOM.w, ROOM.h, new Set(owned.map(item => item.id)),
         reaction && { id: reaction.id, elapsed: Math.max(0, now - reaction.start), duration: reaction.duration },
         arrival && { id: arrival.id, elapsed: Math.max(0, now - arrival.start), landAt: arrival.landAt }, this.chapterInfo(this.roomChapter).theme);
+      this.roomNavigationControls().forEach(control => {
+        const x = control.x + control.w / 2, y = control.y + control.h / 2;
+        Art.box(ctx, control.x + 4, control.y + 6, 36, 36, 18, control.disabled ? '#f3f3e8' : '#e8eedc');
+        ctx.save(); ctx.strokeStyle = control.disabled ? '#c2cab8' : '#75916a'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        const direction = control.action === 'room-prev' ? -1 : 1;
+        ctx.beginPath(); ctx.moveTo(x - direction * 3, y - 6); ctx.lineTo(x + direction * 3, y); ctx.lineTo(x - direction * 3, y + 6); ctx.stroke(); ctx.restore();
+      });
       if (reaction || arrival) Art.box(ctx, 47, 416, 296, 25, 12, '#f4eedc');
       text(ctx, reaction ? reaction.message : arrival ? '轻轻放好，给小猫一个小惊喜～' : owned.length ? '点点家具或下方小卡，看看小猫的回应' : '小猫等着和你一起，把家布置得暖暖的', 195, 429, 11, reaction || arrival ? '#8a785b' : '#899979', '400', 'center');
       Saved.chapterDecorations(this.roomChapter).forEach((item, index) => {

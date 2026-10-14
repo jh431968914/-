@@ -112,6 +112,22 @@ test('微信页面已关闭时不再初始化延迟返回的画布', () => {
   const dev = device({ deferReady: true }); dev.page.onUnload(); dev.finishReady();
   assert.equal(dev.page._view, undefined); assert.equal(dev.frames.size, 0);
 });
+test('保留的微信页面适配支持滑动和箭头，取消及多指触摸不会切换小屋', () => {
+  const storage = new Map([[KEY, JSON.stringify({ version: 1, completed: [1, 2, 3, 4, 5], sound: false })]]);
+  const dev = device({ storage }), view = dev.page._view;
+  view.press('chapter-1'); view.press('room');
+  const saved = storage.get(KEY);
+  dev.tap(340, 310, true); assert.equal(view.roomChapter, 2);
+  const start = dev.point(100, 468, true), end = dev.point(280, 468, true);
+  dev.page.onTouchStart({ touches: [start] }); dev.page.onTouchMove({ touches: [end] }); dev.page.onTouchEnd({ changedTouches: [end] });
+  assert.equal(view.roomChapter, 1); assert.equal(view.roomReaction, null);
+  const leftStart = dev.point(280, 310), leftEnd = dev.point(100, 310);
+  dev.page.onTouchStart({ touches: [leftStart] }); dev.page.onTouchCancel(); dev.page.onTouchEnd({ changedTouches: [leftEnd] });
+  dev.page.onTouchStart({ touches: [leftStart] }); dev.page.onTouchMove({ touches: [leftStart, leftEnd] }); dev.page.onTouchEnd({ changedTouches: [leftEnd] });
+  dev.page.onTouchStart({ touches: [leftStart] }); dev.page.onResize(); dev.page.onTouchEnd({ changedTouches: [leftEnd] });
+  assert.equal(view.roomChapter, 1); assert.equal(storage.get(KEY), saved); dev.page.onUnload();
+});
+
 test('微信工程已配置用户 AppID，音效有效且开发辅助文件不参与打包', () => {
   const config = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../project.config.json'), 'utf8'));
   assert.equal(config.appid, 'wx2b599f1da3db748d'); assert.equal(config.compileType, 'game');
