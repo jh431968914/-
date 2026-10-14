@@ -15,7 +15,12 @@
     { number: 7, id: 'can', spot: 'basket', name: '薄荷水壶', note: '和小猫一起照顾花花草草' },
     { number: 8, id: 'flowers', spot: 'plant', name: '雏菊花盆', note: '一朵朵小花迎着阳光开放' },
     { number: 9, id: 'chime', spot: 'picture', name: '叶子风铃', note: '把轻轻的风留在花房里' },
-    { number: 10, id: 'stand', spot: 'lamp', name: '暖木花架', note: '让每一盆绿意都有自己的家' }
+    { number: 10, id: 'stand', spot: 'lamp', name: '暖木花架', note: '让每一盆绿意都有自己的家' },
+    { number: 11, id: 'rug', spot: 'cushion', name: '月光地毯', note: '给静静读书的小猫一个软软的角落' },
+    { number: 12, id: 'books', spot: 'basket', name: '睡前书篮', note: '把喜欢的小故事都收在身旁' },
+    { number: 13, id: 'vase', spot: 'plant', name: '晚香花瓶', note: '一缕花香，陪小猫慢慢入梦' },
+    { number: 14, id: 'clock', spot: 'picture', name: '猫爪挂钟', note: '让晚安时光走得轻轻的' },
+    { number: 15, id: 'readingLamp', spot: 'lamp', name: '阅读小灯', note: '留一盏暖光，照亮最后一页故事' }
   ];
   function chapterDecorations(number) {
     return number == null ? DECORATIONS : DECORATIONS.filter(item => Core.chapterFor(item.number).number === number);

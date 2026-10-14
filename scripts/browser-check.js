@@ -5,9 +5,11 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { Game, createCampaignLevel, LEVELS, CHAPTERS, chapterFor } = require('../utils/game');
 const { DECORATIONS } = require('../utils/progress');
+const { attachLocalFixture } = require('./browser-fixture');
 async function main() {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 960 }, deviceScaleFactor: 1 });
+  await attachLocalFixture(context);
   let page;
   const errors = [];
   async function openPage(viewport) {
@@ -35,16 +37,18 @@ async function main() {
   try {
     await openPage();
     assert.ok(await page.locator('#background-music').evaluate(music => music.paused && music.loop));
-    assert.equal(await page.title(), '喵喵消消屋 · 10 关体验版');
-    await statusMatches(/已通关 0 \/ 10 关，已解锁 1 关/);
+    assert.equal(await page.title(), '喵喵消消屋 · ' + LEVELS.length + ' 关体验版');
+    await statusMatches(new RegExp('已通关 0 / ' + LEVELS.length + ' 关，已解锁 1 关'));
     await statusMatches(/已收集 0 \/ 5 件装饰。下一件奖励：暖暖软垫/);
     for (let number = 2; number <= 5; number++) assert.ok(await page.locator('[data-key="action-level-' + number + '"]').isDisabled());
     await screenshot('desktop-levels');
-    await click('chapter-2');
-    assert.equal(await page.locator('[data-key^="action-level-"]').count(), 5);
-    for (let number = 6; number <= 10; number++) assert.ok(await page.locator('[data-key="action-level-' + number + '"]').isDisabled());
-    await screenshot('chapter-2-locked');
-    await click('room'); await statusMatches(/已收集 0 \/ 5 件装饰/); await click('close');
+    for (const chapter of CHAPTERS.slice(1)) {
+      await click('chapter-' + chapter.number);
+      assert.equal(await page.locator('[data-key^="action-level-"]').count(), 5);
+      for (let number = chapter.first; number <= chapter.last; number++) assert.ok(await page.locator('[data-key="action-level-' + number + '"]').isDisabled());
+      await screenshot('chapter-' + chapter.number + '-locked');
+      await click('room'); await statusMatches(/已收集 0 \/ 5 件装饰/); await click('close');
+    }
     await click('chapter-1');
     await click('help');
     assert.ok(await page.getByRole('button', { name: '知道啦，开始收拾', exact: true }).isVisible());
@@ -86,7 +90,7 @@ async function main() {
       if (info.number > 1) {
         for (const id of level.solution.slice(0, 3)) await pick(id);
         await click('levels');
-        await statusMatches(new RegExp('已通关 ' + (info.number - 1) + ' / 10'));
+        await statusMatches(new RegExp('已通关 ' + (info.number - 1) + ' / ' + LEVELS.length));
         if (info.number < chapterFor(info.number).last) assert.ok(await page.locator('[data-key="action-level-' + (info.number + 1) + '"]').isDisabled());
         await page.reload({ waitUntil: 'networkidle' });
         assert.ok(await page.getByRole('button', { name: '继续第 ' + info.number + ' 关', exact: true }).isVisible());
@@ -123,14 +127,14 @@ async function main() {
         await click('next');
         await statusMatches(new RegExp('棋盘剩余 ' + LEVELS[info.number].total + ' 张'));
       } else {
-        await click('finish'); await statusMatches(/已通关 10 \/ 10 关/);
+        await click('finish'); await statusMatches(new RegExp('已通关 ' + LEVELS.length + ' / ' + LEVELS.length + ' 关'));
         await statusMatches(/五件装饰已全部收集/);
         await screenshot('room-complete'); await click('close');
       }
     }
     await screenshot('all-completed');
     await page.close(); await openPage({ width: 390, height: 844 });
-    await statusMatches(/已通关 10 \/ 10 关，已解锁 10 关/);
+    await statusMatches(new RegExp('已通关 ' + LEVELS.length + ' / ' + LEVELS.length + ' 关，已解锁 ' + LEVELS.length + ' 关'));
     await click('room'); await statusMatches(/已收集 5 \/ 5 件装饰/); await click('close');
     for (const chapter of CHAPTERS) {
       await click('chapter-' + chapter.number);
@@ -182,7 +186,7 @@ async function main() {
     await statusMatches(/小窝 4 \/ 5 格，已锁定 2 格/);
     assert.equal(await page.locator('[data-key^="action-locked-slot-"]').count(), 2);
     assert.deepEqual(errors, []);
-    console.log('浏览器验证通过：十关真实取牌通关、章节切换与锁定、每章独立收藏、首次奖励与重开保留、三种屏幕布局，以及锁格、失败撤回、背景音乐和限次道具；无浏览器错误。');
+    console.log('浏览器验证通过：' + LEVELS.length + ' 关真实取牌通关、章节切换与锁定、每章独立收藏、首次奖励与重开保留、三种屏幕布局，以及锁格、失败撤回、背景音乐和限次道具；无浏览器错误。');
   } finally { await browser.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

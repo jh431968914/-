@@ -75,6 +75,54 @@ test('提示从玩家实际局面搜索，不依赖原始通关顺序', () => {
   assert.deepEqual(game.alive, before.alive); assert.deepEqual(game.tray, before.tray); assert.equal(game.steps, before.steps);
   route.forEach(id => assert.ok(game.pick(id).ok)); assert.equal(game.status, 'won');
 });
+function highIdFixture() {
+  const level = fixture(Array.from({ length: 108 }, (_, id) => Math.floor(id / 3) % 13));
+  level.lockedSlots = 2;
+  level.tiles[0].blockers = [96];
+  level.tiles[2].blockers = [98];
+  level.tiles[32].blockers = [64];
+  level.tiles[64].blockers = [101];
+  const firstGroups = [2, 33, 32, 21, 10];
+  const groups = firstGroups.concat(Array.from({ length: 36 }, (_, i) => i).filter(i => !firstGroups.includes(i)));
+  level.solution = groups.flatMap(group => [group * 3, group * 3 + 1, group * 3 + 2]);
+  return level;
+}
+test('多段位掩码不混淆跨32、64和96的图块或遮挡，偏离证书后提示仍能通关', () => {
+  const level = highIdFixture(), certificate = new Game(level);
+  level.solution.forEach(id => assert.ok(certificate.pick(id).ok));
+  assert.equal(certificate.status, 'won');
+  const game = Game.fromMoves(level, [96, 97, 99, 100]);
+  assert.equal(game.tray.length, 4); assert.equal(game.capacity, 5);
+  assert.equal(game.isAvailable(2), false, '编号98仍遮挡编号2');
+  assert.equal(game.isAvailable(32), false, '编号64仍遮挡编号32');
+  assert.equal(game.isAvailable(64), false, '编号101仍遮挡编号64');
+  const plannedProbe = Game.fromMoves(level, game.moves);
+  plannedProbe.pick(level.solution.find(id => plannedProbe.alive[id]));
+  assert.equal(plannedProbe.status, 'lost', '原证书剩余顺序无法解决当前局面，必须搜索');
+  const before = { alive: game.alive.slice(), moves: game.moves.slice(), tray: game.tray.slice(), toolsUsed: Object.assign({}, game.toolsUsed) };
+  const route = game.solve(); assert.ok(route);
+  assert.deepEqual(route.slice().sort((a, b) => a - b), level.tiles.filter(tile => before.alive[tile.id]).map(tile => tile.id));
+  assert.equal(new Set(route).size, route.length);
+  assert.ok(route.includes(32) && route.includes(64) && route.includes(98) && route.includes(101));
+  assert.ok(route.some(id => level.tiles[id].kind >= 8), '搜索涵盖第三章新增的图案种类');
+  assert.deepEqual(game.alive, before.alive); assert.deepEqual(game.moves, before.moves);
+  assert.deepEqual(game.tray, before.tray); assert.deepEqual(game.toolsUsed, before.toolsUsed);
+  assert.deepEqual(game.hint(), route); assert.equal(game.remainingTools('hint'), 0);
+  route.forEach(id => { assert.ok(game.isAvailable(id)); assert.ok(game.pick(id).ok); assert.ok(game.tray.length < game.capacity); });
+  assert.equal(game.status, 'won'); assert.equal(game.matches, 36); assert.equal(game.remaining(), 0);
+});
+test('提示搜索达到节点限额不扣次数或改动牌局，后续完整搜索仍可给出提示', () => {
+  const game = Game.fromMoves(highIdFixture(), [96, 97, 99, 100]);
+  const before = { alive: game.alive.slice(), moves: game.moves.slice(), tray: game.tray.slice(), steps: game.steps };
+  assert.equal(game.solve(1), null);
+  const solve = game.solve;
+  game.solve = function () { return solve.call(this, 1); };
+  assert.equal(game.hint(), null); assert.equal(game.remainingTools('hint'), 1);
+  assert.deepEqual(game.alive, before.alive); assert.deepEqual(game.moves, before.moves);
+  assert.deepEqual(game.tray, before.tray); assert.equal(game.steps, before.steps);
+  game.solve = solve;
+  assert.ok(game.hint()); assert.equal(game.remainingTools('hint'), 0);
+});
 test('本地试玩服务能返回页面、脚本，并拒绝非预览目录', async t => {
   const server = createServer();
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));

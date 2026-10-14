@@ -123,6 +123,57 @@
       [[-6, 5], [-1, 3], [4, 4], [8, 7]].forEach(p => ellipse(ctx, p[0], p[1], 2, 2.4, '#dce9f2'));
       stroke(ctx, [[-19, 8], [-17, 14]], '#b6d0e2', 2);
     }
+    if (kind === 8) {
+      box(ctx, -24, -24, 48, 48, 12, '#e4b46b', '#bc8a49');
+      box(ctx, -20, -20, 40, 40, 9, '#f0cb87');
+      [[-14, -14], [14, -14], [-14, 14], [14, 14]].forEach(p => ellipse(ctx, p[0], p[1], 1.5, 1.5, '#bc8a49'));
+      [[-11, -4, -0.45], [-4, -11, -0.2], [5, -11, 0.2], [12, -3, 0.45]].forEach(p => ellipse(ctx, p[0], p[1], 3.4, 4.5, '#ba8549', p[2]));
+      ellipse(ctx, 0, 7, 10, 8, '#ba8549'); ellipse(ctx, -4, 4, 2.5, 1.5, '#e2b06c');
+    }
+    if (kind === 9) {
+      ctx.beginPath(); ctx.moveTo(-10, -22); ctx.lineTo(10, -22); ctx.lineTo(10, -12);
+      ctx.quadraticCurveTo(18, -7, 18, 0); ctx.lineTo(18, 23); ctx.quadraticCurveTo(18, 27, 13, 27);
+      ctx.lineTo(-13, 27); ctx.quadraticCurveTo(-18, 27, -18, 23); ctx.lineTo(-18, 0);
+      ctx.quadraticCurveTo(-18, -7, -10, -12); ctx.closePath(); ctx.fillStyle = '#f4f6ed'; ctx.fill();
+      ctx.strokeStyle = '#8aaaba'; ctx.lineWidth = 2; ctx.stroke();
+      box(ctx, -12, -27, 24, 8, 3, '#86aabd'); stroke(ctx, [[-7, -24], [7, -24]], '#bad0db', 1.5);
+      box(ctx, -14, 1, 28, 18, 3, '#a6c6d6');
+      ellipse(ctx, 0, 10, 5, 3.5, '#eef5ef');
+      [[-5, 5], [-1, 3], [3, 4], [6, 6]].forEach(p => ellipse(ctx, p[0], p[1], 1.6, 2, '#eef5ef'));
+      stroke(ctx, [[-12, -7], [-13, -2]], '#ffffff', 2.5);
+    }
+    if (kind === 10) {
+      ctx.beginPath(); ctx.moveTo(-5, -3); ctx.quadraticCurveTo(-21, -26, -27, -19);
+      ctx.quadraticCurveTo(-29, -1, -22, 13); ctx.quadraticCurveTo(-13, 15, -5, 3);
+      ctx.closePath(); ctx.fillStyle = '#dc96ad'; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(5, -3); ctx.quadraticCurveTo(21, -26, 27, -19);
+      ctx.quadraticCurveTo(29, -1, 22, 13); ctx.quadraticCurveTo(13, 15, 5, 3); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-5, 2); ctx.lineTo(-18, 27); ctx.lineTo(-7, 22); ctx.lineTo(0, 27); ctx.lineTo(6, 4);
+      ctx.closePath(); ctx.fillStyle = '#c87d98'; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(5, 2); ctx.lineTo(19, 26); ctx.lineTo(9, 22); ctx.lineTo(3, 26); ctx.lineTo(-5, 4); ctx.closePath(); ctx.fill();
+      stroke(ctx, [[-23, -14], [-8, -1], [-20, 8]], '#f1c1cf', 2); stroke(ctx, [[23, -14], [8, -1], [20, 8]], '#f1c1cf', 2);
+      box(ctx, -6, -7, 12, 15, 4, '#bd708f'); stroke(ctx, [[-2, -4], [-2, 4]], '#e8afc2', 2);
+    }
+    if (kind === 11) {
+      stroke(ctx, [[-23, 25], [8, -11]], '#b19979', 4);
+      ctx.beginPath(); ctx.moveTo(-3, 8); ctx.bezierCurveTo(-25, -13, 1, -28, 24, -27);
+      ctx.bezierCurveTo(28, -5, 12, 13, -3, 8); ctx.closePath(); ctx.fillStyle = '#80b4a2'; ctx.fill();
+      stroke(ctx, [[-7, 13], [19, -21]], '#497f72', 2);
+      [[-2, 6, -10, -2], [4, -2, -2, -12], [10, -10, 8, -20], [0, 4, 11, 6], [7, -5, 19, -4], [13, -13, 23, -13]].forEach(p =>
+        stroke(ctx, [[p[0], p[1]], [p[2], p[3]]], '#c0d9bb', 1.4));
+      ellipse(ctx, -11, 16, 4, 4, '#d9bb6e'); stroke(ctx, [[-24, 21], [-20, 25]], '#d5c3a2', 2);
+    }
+    if (kind === 12) {
+      ctx.beginPath(); ctx.moveTo(-23, -6); ctx.lineTo(0, -14); ctx.lineTo(24, -6); ctx.lineTo(24, 18);
+      ctx.lineTo(1, 27); ctx.lineTo(-23, 18); ctx.closePath(); ctx.fillStyle = '#caa16f'; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(1, 2); ctx.lineTo(24, -6); ctx.lineTo(24, 18); ctx.lineTo(1, 27); ctx.closePath(); ctx.fillStyle = '#b78a5c'; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-23, -6); ctx.lineTo(0, -14); ctx.lineTo(24, -6); ctx.lineTo(1, 2); ctx.closePath(); ctx.fillStyle = '#856649'; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-23, -6); ctx.lineTo(-29, -18); ctx.lineTo(-7, -27); ctx.lineTo(0, -14); ctx.closePath(); ctx.fillStyle = '#e3c39a'; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(7, -26); ctx.lineTo(29, -17); ctx.lineTo(24, -6); ctx.closePath(); ctx.fillStyle = '#d5b183'; ctx.fill();
+      stroke(ctx, [[1, 3], [1, 25]], '#a47950', 1.3); stroke(ctx, [[-18, 2], [-18, 14]], '#e8c89c', 2);
+      ctx.save(); ctx.translate(-10, 10); ctx.scale(0.32, 0.32);
+      ellipse(ctx, 0, 8, 10, 8, '#896644'); [[-10, -2], [-3, -10], [5, -10], [12, -2]].forEach(p => ellipse(ctx, p[0], p[1], 3.5, 4.5, '#896644')); ctx.restore();
+    }
     ctx.restore();
   }
   function companion(ctx, x, y, size, happy, pose) {
@@ -242,6 +293,54 @@
         });
       });
     }
+    if (id === 'rug') {
+      ellipse(ctx, 0, 10, 31, 12, '#8496ac'); ellipse(ctx, 0, 6, 31, 12, '#b6c1d4');
+      ellipse(ctx, 0, 5, 25, 8, '#e7e3d3');
+      [-23, -14, -5, 5, 14, 23].forEach(px => stroke(ctx, [[px, 14], [px, 18]], '#c7d0dc', 1.5));
+      star(ctx, 0, 4, 6, '#b9a279'); star(ctx, -15, 5, 3, '#bcc6d2'); star(ctx, 15, 5, 3, '#bcc6d2');
+    }
+    if (id === 'books') {
+      ellipse(ctx, 0, 24, 29, 5, '#ded4c1');
+      ctx.beginPath(); ctx.arc(0, -5, 22, Math.PI, 0); ctx.strokeStyle = '#b9a384'; ctx.lineWidth = 3; ctx.stroke();
+      [[-13, -6, '#91a6ba', -0.17], [1, -9, '#c2ae8e', 0.06], [14, -5, '#b3bea0', 0.2]].forEach(([px, py, color, angle]) => {
+        ctx.save(); ctx.translate(px, py); ctx.rotate(angle);
+        box(ctx, -8, -20, 16, 36, 2, color); stroke(ctx, [[-3, -13], [3, -13]], '#f3efdf', 1.4);
+        stroke(ctx, [[-3, -9], [3, -9]], '#f3efdf', 1); ctx.restore();
+      });
+      box(ctx, -28, 3, 56, 21, 7, '#cfb797'); box(ctx, -29, 1, 58, 5, 3, '#e4cdad');
+      [-19, -7, 5, 17].forEach(px => stroke(ctx, [[px, 7], [px, 22]], '#b99e7d', 1));
+      stroke(ctx, [[-24, 12], [24, 12]], '#ead7bd', 1); stroke(ctx, [[-24, 18], [24, 18]], '#ead7bd', 1);
+    }
+    if (id === 'vase') {
+      stroke(ctx, [[0, 9], [-10, -22]], '#8b9c82', 1.6); stroke(ctx, [[0, 9], [11, -28]], '#8b9c82', 1.6);
+      stroke(ctx, [[0, 9], [1, -17]], '#8b9c82', 1.6);
+      ellipse(ctx, -4, -4, 4, 8, '#acb797', -0.6); ellipse(ctx, 6, -8, 4, 8, '#c0c6a5', 0.6);
+      [[-10, -22], [11, -28], [1, -17]].forEach(([px, py]) => {
+        for (let i = 0; i < 5; i++) ellipse(ctx, px + Math.cos(i * Math.PI * 2 / 5) * 4, py + Math.sin(i * Math.PI * 2 / 5) * 4, 3.5, 4, '#e5dae9');
+        ellipse(ctx, px, py, 2.5, 2.5, '#e1c58e');
+      });
+      ctx.beginPath(); ctx.moveTo(-8, 0); ctx.quadraticCurveTo(-6, 9, -14, 18); ctx.quadraticCurveTo(-17, 31, 0, 30);
+      ctx.quadraticCurveTo(17, 31, 14, 18); ctx.quadraticCurveTo(6, 9, 8, 0); ctx.closePath(); ctx.fillStyle = '#a6b5c4'; ctx.fill();
+      ellipse(ctx, 0, 0, 8, 3, '#d3dce3'); stroke(ctx, [[-9, 18], [-10, 24]], '#d4dee3', 2);
+    }
+    if (id === 'clock') {
+      ctx.beginPath(); ctx.moveTo(-23, -18); ctx.lineTo(-21, -33); ctx.lineTo(-10, -26); ctx.lineTo(10, -26); ctx.lineTo(21, -33); ctx.lineTo(23, -18);
+      ctx.closePath(); ctx.fillStyle = '#c4ab8c'; ctx.fill();
+      ellipse(ctx, 0, -1, 27, 27, '#c4ab8c'); ellipse(ctx, 0, -1, 22, 22, '#fcf5e6');
+      [0, 1, 2, 3].forEach(i => { const angle = i * Math.PI / 2; ellipse(ctx, Math.cos(angle) * 17, -1 + Math.sin(angle) * 17, 1.4, 1.4, '#b6a48b'); });
+      stroke(ctx, [[-7, -9], [0, -1], [11, 3]], '#7a8fa0', 2); ellipse(ctx, 0, -1, 2.5, 2.5, '#bd9f75');
+      icon(ctx, 5, 0, 11, 10);
+    }
+    if (id === 'readingLamp') {
+      ellipse(ctx, 0, -8, 31, 33, '#f6ebce');
+      stroke(ctx, [[0, 24], [0, -3], [11, -20]], '#8f9eab', 3.5); ellipse(ctx, 0, 25, 20, 5, '#aab7c2');
+      ctx.save(); ctx.translate(10, -16); ctx.rotate(0.18);
+      ctx.beginPath(); ctx.moveTo(-12, -13); ctx.lineTo(12, -13); ctx.lineTo(22, 7); ctx.quadraticCurveTo(0, 13, -22, 7);
+      ctx.closePath(); ctx.fillStyle = '#aab9c8'; ctx.fill(); ellipse(ctx, 0, 7, 22, 4, '#f7dda4');
+      stroke(ctx, [[-7, -10], [-14, 4]], '#d8e1e8', 2); ctx.restore();
+      box(ctx, -21, 18, 21, 6, 1, '#c5af8e'); box(ctx, -19, 15, 18, 4, 1, '#fff2d8');
+      star(ctx, 11, -12, 4, '#f8efc7');
+    }
     ctx.restore();
   }
   function roomLayout(x, y, width, height) {
@@ -266,9 +365,10 @@
   function isometricRoom(ctx, x, y, width, height, owned, reaction, arrival, theme) {
     ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 1;
     const { sx, sy, sz, project } = roomLayout(x, y, width, height);
-    const garden = theme === 'garden';
+    const garden = theme === 'garden', study = theme === 'study';
     const gardenItems = { cushion: 'mat', basket: 'can', plant: 'flowers', picture: 'chime', lamp: 'stand' };
-    const itemId = id => garden ? gardenItems[id] : id;
+    const studyItems = { cushion: 'rug', basket: 'books', plant: 'vase', picture: 'clock', lamp: 'readingLamp' };
+    const itemId = id => study ? studyItems[id] : garden ? gardenItems[id] : id;
     const has = id => owned.has(itemId(id));
     const elapsed = reaction ? reaction.elapsed : 0;
     const smooth = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
@@ -319,14 +419,14 @@
     }
     const base = project(3, 2.6, -0.1);
     ellipse(ctx, base[0], base[1], sx * 5.8, sy * 5.8, 'rgba(123, 113, 84, 0.10)');
-    block(0, 0, -0.18, 6, 5, 0.18, garden ? '#e8d8bb' : '#e7d0aa', '#cbb28b', '#d9bd95');
+    block(0, 0, -0.18, 6, 5, 0.18, study ? '#dcccb6' : garden ? '#e8d8bb' : '#e7d0aa', '#cbb28b', '#d9bd95');
     for (let v = 0.5; v < 5; v += 0.5) {
       stroke(ctx, [project(0, v, 0.01), project(6, v, 0.01)], '#d8bf98', 0.65);
       const u = (Math.round(v * 2) % 3) + 1;
       stroke(ctx, [project(u, v - 0.5, 0.01), project(u, v, 0.01)], '#dac29c', 0.6);
     }
-    polygon([project(0, 0), project(0, 5), project(0, 5, 3), project(0, 0, 3)], garden ? '#dce8d5' : '#eee9da', '#ddd7c6');
-    polygon([project(0, 0), project(6, 0), project(6, 0, 3), project(0, 0, 3)], garden ? '#f1eed7' : '#f7efdf', '#e3dac5');
+    polygon([project(0, 0), project(0, 5), project(0, 5, 3), project(0, 0, 3)], study ? '#dce1e8' : garden ? '#dce8d5' : '#eee9da', '#ddd7c6');
+    polygon([project(0, 0), project(6, 0), project(6, 0, 3), project(0, 0, 3)], study ? '#eee7dd' : garden ? '#f1eed7' : '#f7efdf', '#e3dac5');
     if (garden) {
       [0.35, 1.9, 3.45].forEach(v => {
         polygon([project(0.02, v, 0.65), project(0.02, v + 1.25, 0.65), project(0.02, v + 1.25, 2.72), project(0.02, v, 2.72)], '#edf1dc', '#adc5a7');
@@ -339,19 +439,27 @@
     function windowPane(u1, u2, z1, z2, fill) {
       polygon([project(u1, 0.02, z1), project(u2, 0.02, z1), project(u2, 0.02, z2), project(u1, 0.02, z2)], fill);
     }
-    windowPane(1.2, 3.95, 1.03, 2.65, '#fff9e8'); windowPane(1.38, 3.77, 1.18, 2.5, '#cddfc5');
-    windowPane(1.38, 3.77, 1.18, 1.6, '#c1d7bb');
+    windowPane(1.2, 3.95, 1.03, 2.65, '#fff9e8'); windowPane(1.38, 3.77, 1.18, 2.5, study ? '#8095b2' : '#cddfc5');
+    windowPane(1.38, 3.77, 1.18, 1.6, study ? '#7289a8' : '#c1d7bb');
+    if (study) {
+      const moon = project(1.95, 0.035, 2.18);
+      ellipse(ctx, moon[0], moon[1], sx * 0.25, sx * 0.25, '#f7e9c0');
+      ellipse(ctx, moon[0] + sx * 0.12, moon[1] - sx * 0.07, sx * 0.23, sx * 0.23, '#8095b2');
+      [[3.2, 2.3], [3.5, 1.48], [2.2, 1.5]].forEach(([u, z]) => { const p = project(u, 0.035, z); star(ctx, p[0], p[1], sx * 0.07, '#eee3c4'); });
+      polygon([project(1.5, 0.2, 0.01), project(2.7, 0.2, 0.01), project(4.2, 3.2, 0.01), project(2.5, 3.2, 0.01)], '#dce0d9');
+    }
     stroke(ctx, [project(2.58, 0.04, 1.15), project(2.58, 0.04, 2.53)], '#fff9e8', 3.5);
     stroke(ctx, [project(1.35, 0.04, 1.82), project(3.8, 0.04, 1.82)], '#fff9e8', 3.5);
     block(1.04, 0, 0.94, 3.07, 0.28, 0.1, '#e2caa2', '#cbb28c', '#d3ba95');
-    block(0.65, 0.58, 0, 0.19, 0.42, 0.64, '#b8c59e', '#98ad88', '#a7b794');
+    block(0.65, 0.58, 0, 0.19, 0.42, 0.64, study ? '#aebcca' : '#b8c59e', study ? '#879eb2' : '#98ad88', study ? '#98acbd' : '#a7b794');
     block(0.91, 0.58, 0, 0.15, 0.42, 0.48, '#e3cb9f', '#c7b18a', '#d4c096');
     if (has('picture')) {
       beginFurniture('picture');
-      if (garden) {
+      if (garden || study) {
         const p = project(0.08, 3.07, 1.61);
-        ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('picture') * pulse * 0.12);
-        decoration(ctx, 'chime', 0, 0, sx * 1.6); ctx.restore();
+        ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('picture') * pulse * (study ? 0.025 : 0.12));
+        decoration(ctx, itemId('picture'), 0, 0, sx * (study ? 1.35 : 1.6)); ctx.restore();
+        if (study && active('picture')) star(ctx, p[0] + sx * 0.65, p[1] - sx * 0.45, sx * 0.12 * strength, '#dac294');
       } else {
         stroke(ctx, [project(0.04, 2.45, 2.15), project(0.04, 3.08, 2.49), project(0.04, 3.7, 2.15)], '#cbb794', 1);
         polygon([project(0.04, 2.45, 1.06), project(0.04, 3.7, 1.06), project(0.04, 3.7, 2.15), project(0.04, 2.45, 2.15)], '#c6a681');
@@ -366,10 +474,10 @@
     // Furniture is painted from the back of the room towards the cat in front.
     if (has('plant')) {
       beginFurniture('plant');
-      if (garden) {
+      if (garden || study) {
         shadow(0.85, 3.55, 0.52, 0.4); const p = project(0.83, 3.53, 0.65);
         ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('plant') * pulse * 0.04);
-        decoration(ctx, 'flowers', 0, 0, sx * 1.7); ctx.restore();
+        decoration(ctx, itemId('plant'), 0, 0, sx * 1.7); ctx.restore();
       } else {
         shadow(0.85, 3.55, 0.52, 0.4);
         const u = 0.5, v = 3.2, d = 0.66, h = 0.45, inset = 0.1;
@@ -392,6 +500,12 @@
         const p = project(5, 0.95, 0.74); shadow(5, 0.95, 0.7, 0.5);
         decoration(ctx, 'stand', p[0], p[1], sx * 1.9);
         if (active('lamp')) star(ctx, p[0] + sx * 0.7, p[1] - sx * 0.7, sx * 0.16 * strength, '#d9b568');
+      } else if (study) {
+        const p = project(5, 0.95, 0.83), warmth = active('lamp'); shadow(5, 0.95, 0.7, 0.5);
+        const light = project(4.6, 2.4);
+        ellipse(ctx, light[0], light[1], sx * (1.4 + warmth * 0.3), sy * 1.25, 'rgba(255, 226, 161, ' + (0.2 + warmth * 0.2) + ')');
+        decoration(ctx, 'readingLamp', p[0], p[1], sx * 1.8);
+        if (warmth) star(ctx, p[0] + sx * 0.7, p[1] - sx * 0.8, sx * 0.14 * strength, '#e3c384');
       } else {
         const bottom = project(5.0, 0.95), top = project(5.0, 0.95, 1.43);
         const warmth = active('lamp');
@@ -413,10 +527,10 @@
     }
     if (has('basket')) {
       beginFurniture('basket');
-      if (garden) {
+      if (garden || study) {
         const p = project(2.27, 3.37, 0.6); shadow(2.28, 3.35, 0.78, 0.47);
-        ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('basket') * -0.13);
-        decoration(ctx, 'can', 0, 0, sx * 1.4); ctx.restore();
+        ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(active('basket') * (study ? pulse * 0.025 : -0.13));
+        decoration(ctx, itemId('basket'), 0, 0, sx * (study ? 1.65 : 1.4)); ctx.restore();
       } else {
         shadow(2.28, 3.35, 0.78, 0.47);
         block(1.7, 2.9, 0, 1.14, 0.94, 0.35, '#e1c7a0', '#d4b68d', '#c2a179');
@@ -435,9 +549,14 @@
     shadow(4.13, 3.15, 1.03, 0.88);
     if (has('cushion')) {
       beginFurniture('cushion');
-      floorRound(3.15, 2.4, 0.02, 1.98, 1.5, 0.24, garden ? '#91a47a' : '#bf9283');
-      floorRound(3.15, 2.4, 0.21, 1.98, 1.5, 0.24, garden ? '#b5c391' : '#d8a697');
-      floorRound(3.27, 2.51, 0.24, 1.74, 1.28, 0.2, garden ? '#dce2b1' : '#e9c1b0');
+      floorRound(3.15, 2.4, 0.02, 1.98, 1.5, 0.24, study ? '#8496ac' : garden ? '#91a47a' : '#bf9283');
+      floorRound(3.15, 2.4, 0.21, 1.98, 1.5, 0.24, study ? '#b6c1d4' : garden ? '#b5c391' : '#d8a697');
+      floorRound(3.27, 2.51, 0.24, 1.74, 1.28, 0.2, study ? '#e7e3d3' : garden ? '#dce2b1' : '#e9c1b0');
+      if (study) {
+        const p = project(4.05, 3.75, 0.25); star(ctx, p[0], p[1], sx * 0.14, '#b09b77');
+        stroke(ctx, [project(3.35, 2.4, 0.22), project(3.35, 2.21, 0.22)], '#c7d0dc', 1.4);
+        stroke(ctx, [project(4.75, 2.4, 0.22), project(4.75, 2.21, 0.22)], '#c7d0dc', 1.4);
+      }
       endFurniture('cushion', 4.13, 3.15, 0.24);
     }
     const sniff = active('plant'), play = active('basket'), pose = {
@@ -454,6 +573,12 @@
       ctx.translate(ball[0], ball[1]);
       if (garden) {
         [0, 1, 2].forEach(i => ellipse(ctx, -i * sx * 0.13, -sx * (0.2 + (elapsed / 700 + i / 3) % 1), sx * 0.045, sx * 0.07, '#87b7b4'));
+      } else if (study) {
+        ctx.rotate(pulse * 0.12);
+        const pageWidth = sx * 0.42, pageHeight = sx * 0.34;
+        box(ctx, -pageWidth, -pageHeight, pageWidth * 2, pageHeight * 1.7, sx * 0.04, '#f7ecd5', '#cfb896');
+        stroke(ctx, [[0, -pageHeight], [0, pageHeight * 0.7]], '#cfb896', 0.9);
+        [-1, 1].forEach(side => stroke(ctx, [[side * sx * 0.12, -sx * 0.13], [side * sx * 0.3, -sx * 0.1]], '#b9aa91', 0.8));
       } else { ctx.rotate(pulse * 0.7); icon(ctx, 4, 0, 0, sx * 0.67); }
       ctx.restore();
     }

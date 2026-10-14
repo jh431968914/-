@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { createCampaignLevel, LEVELS, chapterFor } = require('../utils/game');
 const { KEY, DECORATIONS } = require('../utils/progress');
+const { attachLocalFixture } = require('./browser-fixture');
 const SIZES = { desktop: { width: 1280, height: 960 }, mobile: { width: 390, height: 844 }, small: { width: 320, height: 640 } };
 
 async function main() {
@@ -15,6 +16,7 @@ async function main() {
     for (const [size, viewport] of Object.entries(SIZES)) {
       if (process.argv[3] && process.argv[3] !== size) continue;
       const context = await browser.newContext({ viewport, deviceScaleFactor: 2 });
+      await attachLocalFixture(context);
       const page = await context.newPage();
       page.on('pageerror', error => errors.push(error.message));
       page.on('console', event => { if (event.type() === 'error') errors.push(event.text()); });
@@ -22,7 +24,7 @@ async function main() {
       await page.clock.pauseAt(new Date('2026-10-13T08:00:01Z'));
       const click = action => page.locator('[data-key="action-' + action + '"]').click();
       const status = () => page.locator('#live-status').textContent();
-      const shot = name => page.screenshot({ path: path.resolve(__dirname, '../tests/arrival-v11-' + name + '-' + size + '.png'), fullPage: true });
+      const shot = name => page.screenshot({ path: path.resolve(__dirname, '../tests/arrival-v12-' + name + '-' + size + '.png'), fullPage: true });
       await page.goto('http://127.0.0.1:4173', { waitUntil: 'load' });
       for (const item of DECORATIONS) {
         const level = createCampaignLevel(item.number);
@@ -63,13 +65,13 @@ async function main() {
           await click('close'); await click('next');
         } else await click(item.number < LEVELS.length ? 'next' : 'levels');
         if (item.number < LEVELS.length) assert.match(await status(), /棋盘剩余/);
-        else assert.match(await status(), /已通关 10 \/ 10/);
+        else assert.match(await status(), new RegExp('已通关 ' + LEVELS.length + ' / ' + LEVELS.length));
         await page.reload({ waitUntil: 'load' });
         await click('chapter-' + chapterFor(item.number).number); await click('room');
         assert.doesNotMatch(await status(), /新家具入屋/);
         assert.match(await status(), new RegExp('已收集 ' + (item.number - chapterFor(item.number).first + 1) + ' / 5'));
       }
-      console.log(size + '：两章十件家具落位、欢迎、跳过、续关和重开验证通过。');
+      console.log(size + '：' + DECORATIONS.length + ' 件家具落位、欢迎、跳过、续关和重开验证通过。');
       await context.close();
     }
     assert.deepEqual(errors, []);

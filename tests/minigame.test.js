@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { MiniGameRuntime } = require('../utils/minigame');
-const { KEY } = require('../utils/progress');
+const { KEY, DECORATIONS } = require('../utils/progress');
 const { BOARD_X, BOARD_Y } = require('../utils/view');
 function mock(options) {
   options = options || {};
@@ -71,20 +71,20 @@ test('微信旧存档自动显示全部装饰，缺少 ellipse 时仍能绘制�
   const dev = mock({ storage, noEllipse: true });
   assert.equal(dev.runtime.view.progress.decorations().length, 5);
   dev.runtime.view.press('chapter-1');
-  dev.tap(307, 231); assert.equal(dev.runtime.view.modal, 'room');
+  dev.tap(307, 276); assert.equal(dev.runtime.view.modal, 'room');
   dev.runtime.view.draw(Date.now());
   dev.tap(195, 715); assert.equal(dev.runtime.view.modal, null);
   assert.equal(dev.runtime.view.screen, 'levels'); dev.runtime.destroy();
 });
 
-test('小游戏两间小屋的家具触摸适配安全区与小屏，取消不触发，后台归来不会留下过期动画', () => {
-  const storage = new Map([[KEY, JSON.stringify({ version: 1, completed: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], sound: false })]]);
+test('小游戏三间小屋的家具触摸适配安全区与小屏，取消不触发，后台归来不会留下过期动画', () => {
+  const storage = new Map([[KEY, JSON.stringify({ version: 1, completed: DECORATIONS.map(item => item.number), sound: false })]]);
   const dev = mock({ storage, noEllipse: true }), view = dev.runtime.view;
   dev.info.windowWidth = 320; dev.info.windowHeight = 640; dev.info.screenHeight = 640;
   dev.info.safeArea.bottom = 620; dev.callbacks.WindowResize();
-  for (const chapter of [1, 2]) {
+  for (const chapter of [1, 2, 3]) {
     view.press('chapter-' + chapter);
-    dev.tap(307, 231);
+    dev.tap(307, 276);
     for (const item of view.roomDecorations()) {
       const id = item.id;
       const control = view.controls().find(item => item.action === 'furniture-' + id);

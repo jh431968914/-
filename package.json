@@ -1,8 +1,8 @@
 {
   "name": "meow-match-prototype",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "private": true,
-  "description": "猫咪主题叠层三消 10 关体验版与微信小游戏",
+  "description": "猫咪主题叠层三消 15 关体验版与微信小游戏",
   "scripts": {
     "start": "node scripts/server.js",
     "test": "node --test tests/game.test.js tests/progress.test.js tests/wechat.test.js tests/minigame.test.js tests/tools.test.js tests/audio.test.js tests/slots.test.js tests/room.test.js",

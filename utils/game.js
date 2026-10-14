@@ -8,7 +8,8 @@
   const CAPACITY = 7;
   const CHAPTERS = [
     { number: 1, name: '暖暖客厅', first: 1, last: 5, theme: 'living' },
-    { number: 2, name: '阳光花房', first: 6, last: 10, theme: 'garden' }
+    { number: 2, name: '阳光花房', first: 6, last: 10, theme: 'garden' },
+    { number: 3, name: '月光书房', first: 11, last: 15, theme: 'study' }
   ];
   function chapterFor(number) { return CHAPTERS.find(chapter => number >= chapter.first && number <= chapter.last); }
   const LEVELS = [
@@ -21,7 +22,12 @@
     { number: 7, name: '晨间小水滴', difficulty: '适中 · 观察', total: 42, kinds: 6, layers: 4, lockedSlots: 1, revision: 1, seed: 20261179, note: '先找成对的小伙伴' },
     { number: 8, name: '雏菊开花啦', difficulty: '进阶 · 选择', total: 48, kinds: 7, layers: 5, lockedSlots: 1, revision: 1, seed: 20261112, note: '看看花丛下面藏着什么' },
     { number: 9, name: '风铃轻轻响', difficulty: '困难 · 规划', total: 54, kinds: 7, layers: 6, lockedSlots: 2, revision: 1, seed: 20261122, note: '留好空位，再揭开下一层' },
-    { number: 10, name: '满屋好时光', difficulty: '挑战 · 收官', total: 60, kinds: 8, layers: 7, lockedSlots: 2, revision: 1, seed: 20261122, note: '把花房的最后一份心意带回家' }
+    { number: 10, name: '满屋好时光', difficulty: '高难 · 收官', total: 60, kinds: 8, layers: 7, lockedSlots: 2, revision: 2, seed: 20262320, note: '看清深层配对，再带回最后一份心意' },
+    { number: 11, name: '月光翻书页', difficulty: '高难 · 新图案', total: 60, kinds: 9, layers: 8, lockedSlots: 2, revision: 1, seed: 20262421, newKind: 8, note: '新伙伴：猫咪饼干，先找第三张' },
+    { number: 12, name: '睡前小故事', difficulty: '高难 · 取舍', total: 60, kinds: 10, layers: 8, lockedSlots: 2, revision: 1, seed: 20262263, newKind: 9, note: '新伙伴：猫咪牛奶，给配对留出空位' },
+    { number: 13, name: '花香伴晚安', difficulty: '极难 · 规划', total: 60, kinds: 11, layers: 9, lockedSlots: 2, revision: 1, seed: 20272414, newKind: 10, note: '新伙伴：蝴蝶结，分清每一组图案' },
+    { number: 14, name: '时针轻轻走', difficulty: '极难 · 深层', total: 60, kinds: 12, layers: 9, lockedSlots: 2, revision: 1, seed: 20271743, newKind: 11, note: '新伙伴：羽毛玩具，先想两步再取牌' },
+    { number: 15, name: '灯下好梦来', difficulty: '极难 · 收官', total: 60, kinds: 13, layers: 10, lockedSlots: 2, revision: 1, seed: 20285550, newKind: 12, note: '新伙伴：小纸箱，把所有配对带回家' }
   ];
   const TYPES = [
     { name: '橘猫', color: '#f5b66b', bg: '#fff0d9' },
@@ -31,7 +37,12 @@
     { name: '毛线球', color: '#c38cab', bg: '#f7e5ef' },
     { name: '猫爪', color: '#b59bc6', bg: '#efe6f6' },
     { name: '铃铛', color: '#d3aa58', bg: '#fff1d0' },
-    { name: '猫碗', color: '#83a6c7', bg: '#e3eef7' }
+    { name: '猫碗', color: '#83a6c7', bg: '#e3eef7' },
+    { name: '猫咪饼干', color: '#d3a565', bg: '#fff0d6' },
+    { name: '猫咪牛奶', color: '#83b2c5', bg: '#e7f4f7' },
+    { name: '蝴蝶结', color: '#d497a8', bg: '#fbe9ee' },
+    { name: '羽毛玩具', color: '#88b59a', bg: '#e8f5e9' },
+    { name: '小纸箱', color: '#ba9874', bg: '#f5ebdc' }
   ];
   function random(seed) {
     let value = seed >>> 0;
@@ -108,7 +119,12 @@
         7: [base, shifted, center, shifted.slice(0, 8)],
         8: [base, shifted, center, shifted.slice(0, 9), cross],
         9: [base12, shifted, center, shifted.slice(0, 11), cross, staggered],
-        10: [base, shifted, center, shifted.slice(0, 10), center, corners, [[60, 60], [180, 120], [60, 180]]]
+        10: [base, shifted, center, shifted.slice(0, 10), center, corners, [[60, 60], [180, 120], [60, 180]]],
+        11: [base12, shifted.slice(0, 11), center.concat([[0, 120]]), shifted.slice(0, 9), seven, staggered, corners, [[90, 90], [150, 150]]],
+        12: [base, shifted.slice(0, 10), center, shifted.slice(0, 8), cross, staggered, seven, [[60, 60], [180, 120], [60, 180]]],
+        13: [base12, shifted.slice(0, 10), center, shifted.slice(0, 8), cross, inner, corners, staggered, [[120, 60], [120, 180], [240, 120]]],
+        14: [base, shifted.slice(0, 10), center, shifted.slice(0, 7), seven, corners, inner, cross, [[120, 120]]],
+        15: [base12, shifted.slice(0, 10), center, shifted.slice(0, 6), cross, inner, corners, staggered, inner, [[120, 120]]]
       };
       layouts[number].forEach((points, layer) => points.forEach(p => number > 5 ? add(240 - p[1], p[0], layer) : add(p[0], p[1], layer)));
     } else {
@@ -148,7 +164,7 @@
       kinds.push(2, 2, 2);
     } else if (number === 6) {
       batches.forEach(([a, b, c]) => kinds.push(a, b, a, c, b, a, c, b, c));
-    } else kinds.push.apply(kinds, mixedKinds(tiles.length, info.kinds, number > 5 ? number - 5 : number, rng, levelCapacity(info)));
+    } else kinds.push.apply(kinds, mixedKinds(tiles.length, info.kinds, number >= 10 ? number - 2 : number > 5 ? number - 5 : number, rng, levelCapacity(info)));
     solution.forEach((id, i) => { tiles[id].kind = kinds[i]; });
     return Object.assign({}, info, { tiles, solution, seed });
   }
@@ -260,42 +276,44 @@
       const tiles = this.level.tiles;
       const counts = TYPES.map((_, kind) => this.tray.filter(tile => tile.kind === kind).length);
       const capacity = this.capacity;
-      let lo = 0, hi = 0;
+      // Use one 32-bit word per block of tiles; high ids must never alias ids 32–63.
+      const words = Math.ceil(tiles.length / 32);
+      const aliveMask = Array(words).fill(0);
       this.alive.forEach((alive, id) => {
-        if (alive) { if (id < 32) lo = (lo | (1 << id)) >>> 0; else hi |= 1 << (id - 32); }
+        if (alive) aliveMask[id >>> 5] = (aliveMask[id >>> 5] | (1 << (id & 31))) >>> 0;
       });
       const masks = tiles.map(tile => {
-        let low = 0, high = 0;
-        tile.blockers.forEach(id => { if (id < 32) low = (low | (1 << id)) >>> 0; else high |= 1 << (id - 32); });
-        return [low, high];
+        const mask = Array(words).fill(0);
+        tile.blockers.forEach(id => { mask[id >>> 5] = (mask[id >>> 5] | (1 << (id & 31))) >>> 0; });
+        return mask;
       });
       const dead = new Set();
       let visited = 0;
       const limit = nodeLimit == null ? 60000 : nodeLimit;
-      function search(low, high, held) {
+      function search(alive, held) {
         if (++visited > limit) return null;
-        if (!low && !high) return held.every(n => n === 0) ? [] : null;
-        const key = low + ':' + high + ':' + held.join('');
+        if (alive.every(word => word === 0)) return held.every(n => n === 0) ? [] : null;
+        const key = alive.join(',') + ':' + held.join('');
         if (dead.has(key)) return null;
         const available = tiles.filter(tile => {
-          const exists = tile.id < 32 ? (low & (1 << tile.id)) !== 0 : (high & (1 << (tile.id - 32))) !== 0;
-          return exists && !(low & masks[tile.id][0]) && !(high & masks[tile.id][1]);
+          const exists = (alive[tile.id >>> 5] & (1 << (tile.id & 31))) !== 0;
+          return exists && masks[tile.id].every((mask, index) => !(alive[index] & mask));
         });
         available.sort((a, b) => held[b.kind] - held[a.kind] || b.layer - a.layer || a.id - b.id);
         for (const tile of available) {
           const next = held.slice();
           next[tile.kind] = (next[tile.kind] + 1) % 3;
           if (next.reduce((sum, n) => sum + n, 0) >= capacity) continue;
-          const nextLo = tile.id < 32 ? (low & ~(1 << tile.id)) >>> 0 : low;
-          const nextHi = tile.id < 32 ? high : high & ~(1 << (tile.id - 32));
-          const tail = search(nextLo, nextHi, next);
+          const nextAlive = alive.slice();
+          nextAlive[tile.id >>> 5] = (nextAlive[tile.id >>> 5] & ~(1 << (tile.id & 31))) >>> 0;
+          const tail = search(nextAlive, next);
           if (tail) return [tile.id].concat(tail);
           if (visited > limit) return null;
         }
         dead.add(key);
         return null;
       }
-      return search(lo, hi, counts);
+      return search(aliveMask, counts);
     }
   }
   return { Game, createLevel, createCampaignLevel, LEVELS, CHAPTERS, chapterFor, TYPES, SIZE, CAPACITY, TOOL_LIMITS, levelCapacity };

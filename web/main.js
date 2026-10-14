@@ -55,7 +55,7 @@
     status.textContent += ' ' + chapter.name + '，第 ' + chapter.first + ' 至 ' + chapter.last + ' 关。';
     if (view.modal === 'room') {
       status.textContent += ' 我的小屋，已收集 ' + owned.length + ' / 5 件装饰。' +
-        '等距视角的小屋有两面墙、木地板和坐在小窝里的猫咪。' +
+        (chapter.theme === 'study' ? '月光书房有夜蓝窗、暖木地板和陪你读故事的猫咪。' : '等距视角的小屋有两面墙、木地板和坐在小窝里的猫咪。') +
         (owned.length ? '已摆放：' + owned.map(item => item.name).join('、') + '。' : '小屋还在等待第一件装饰。') +
         (nextReward ? '通过第 ' + nextReward.number + ' 关获得' + nextReward.name + '。' : '五件装饰已全部收集。');
       if (view.roomArrival) status.textContent += ' 新家具入屋：' + view.roomGift.name + (view.roomArrival.welcomed ? '已放好，小猫来欢迎啦。' : '正在轻轻落位，可跳过动画。');

@@ -11,12 +11,12 @@ function win(view) {
   view.game.level.solution.forEach(id => { view.pick(id); view.animation = null; });
   assert.equal(view.game.status, 'won');
 }
-test('首次通关才获得对应装饰，五关奖励自动保存且重玩不会重复发放', () => {
+test('首次通关才获得对应装饰，十五关奖励自动保存且重玩不会重复发放', () => {
   const storage = memory(), view = new GameView({ ctx: {}, storage });
   assert.deepEqual(view.progress.decorations(), []);
   assert.equal(view.progress.nextDecoration().id, 'cushion');
   view.press('resume');
-  for (let number = 1; number <= 5; number++) {
+  for (let number = 1; number <= DECORATIONS.length; number++) {
     view.pick(view.game.level.solution[0]); view.animation = null;
     assert.equal(view.progress.decorations().length, number - 1);
     assert.equal(view.newDecoration, null);
@@ -26,11 +26,11 @@ test('首次通关才获得对应装饰，五关奖励自动保存且重玩不�
     const restored = new Progress(storage);
     assert.deepEqual(restored.decorations(), DECORATIONS.slice(0, number));
     assert.equal(restored.nextDecoration(), DECORATIONS[number] || null);
-    if (number < 5) view.press('next');
+    if (number < DECORATIONS.length) view.press('next');
   }
   view.press('restart'); assert.equal(view.newDecoration, null);
   win(view); assert.equal(view.newDecoration, null);
-  assert.equal(new Progress(storage).decorations().length, 5);
+  assert.equal(new Progress(storage).decorations().length, DECORATIONS.length);
 });
 test('旧存档按有效通关记录补齐装饰，保留正在玩的局面、道具和声音', () => {
   const original = new Progress(memory()), first = original.gameFor(1);
@@ -75,7 +75,7 @@ test('通关后可查看小屋、返回结算并进入下一关，集齐后主�
   view.press('bring-home'); view.press('close');
   assert.equal(view.screen, 'game'); assert.equal(view.game.status, 'won');
   view.press('next'); assert.equal(view.game.level.number, 2); assert.equal(view.modal, null);
-  for (let number = 2; number <= 10; number++) { win(view); if (number < 10) view.press('next'); }
+  for (let number = 2; number <= DECORATIONS.length; number++) { win(view); if (number < DECORATIONS.length) view.press('next'); }
   assert.deepEqual(view.controls().map(item => item.action), ['bring-home', 'restart', 'levels']);
   view.press('bring-home'); assert.equal(view.screen, 'game'); assert.equal(view.modal, 'room');
   view.press('skip-arrival'); view.press('levels'); view.press('room');
@@ -138,7 +138,7 @@ test('家具回应限为一个，尊重静音，结束或关闭会清理且从�
   assert.deepEqual(view.game.moves, moves); assert.deepEqual(view.game.toolsUsed, tools);
 });
 
-test('十关首次奖励各播放一次落位和欢迎，动画前已保存，结束后可直接继续', () => {
+test('十五关首次奖励各播放一次落位和欢迎，动画前已保存，结束后可直接继续', () => {
   const ctx = new Proxy({}, { get(target, key) { return key in target ? target[key] : () => {}; } });
   const storage = memory(), sounds = [], view = new GameView({ ctx, storage, playSound: name => sounds.push(name) });
   view.press('resume');
@@ -159,10 +159,10 @@ test('十关首次奖励各播放一次落位和欢迎，动画前已保存，�
     view.draw(arrival.start + 3200);
     assert.equal(view.roomArrival, null); assert.equal(view.roomReaction, null);
     assert.equal(storage.read(KEY), saved);
-    assert.ok(view.controls().some(control => control.action === (item.number < 10 ? 'next' : 'levels')));
+    assert.ok(view.controls().some(control => control.action === (item.number < DECORATIONS.length ? 'next' : 'levels')));
     view.press('close'); view.press('room'); assert.equal(view.roomArrival, null);
     view.press('close');
-    if (item.number < 10) view.press('next');
+    if (item.number < DECORATIONS.length) view.press('next');
   }
   view.press('restart'); win(view);
   assert.equal(view.pendingArrival, null);

@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { createCampaignLevel, CHAPTERS } = require('../utils/game');
 const { KEY, chapterDecorations } = require('../utils/progress');
+const { attachLocalFixture } = require('./browser-fixture');
 async function main() {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const errors = [];
@@ -12,13 +13,14 @@ async function main() {
   try {
     for (const [size, viewport] of Object.entries(sizes)) {
       const context = await browser.newContext({ viewport, deviceScaleFactor: 2 });
+      await attachLocalFixture(context);
       const page = await context.newPage();
       page.on('pageerror', error => errors.push(error.message));
       page.on('console', event => { if (event.type() === 'error') errors.push(event.text()); });
       await page.clock.install({ time: new Date('2026-10-14T08:00:00Z') });
       await page.clock.pauseAt(new Date('2026-10-14T08:00:01Z'));
       const click = async action => { await page.locator('[data-key="action-' + action + '"]').click(); await page.clock.runFor(20); };
-      const shot = async name => { await page.clock.runFor(20); await page.screenshot({ path: path.resolve(__dirname, '../tests/room-v11-' + name + '-' + size + '.png'), fullPage: true }); };
+      const shot = async name => { await page.clock.runFor(20); await page.screenshot({ path: path.resolve(__dirname, '../tests/room-v12-' + name + '-' + size + '.png'), fullPage: true }); };
       await page.goto('http://127.0.0.1:4173', { waitUntil: 'networkidle' });
       for (const chapter of CHAPTERS) {
         const decorations = chapterDecorations(chapter.number);
@@ -26,18 +28,20 @@ async function main() {
           const data = { version: 1, completed: Array.from({ length: chapter.first - 1 + count }, (_, index) => index + 1), sound: false };
           await page.evaluate(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), { key: KEY, value: data });
           await page.reload({ waitUntil: 'networkidle' });
-          if (chapter.number === 2 && count === 0) {
-            assert.match(await page.locator('#live-status').textContent(), /阳光花房/);
-            assert.equal(await page.locator('[data-key="action-level-6"]').isEnabled(), true);
+          if (chapter.number > 1 && count === 0) {
+            assert.match(await page.locator('#live-status').textContent(), new RegExp(chapter.name));
+            assert.equal(await page.locator('[data-key="action-level-' + chapter.first + '"]').isEnabled(), true);
           }
           await click('chapter-' + chapter.number);
           assert.match(await page.locator('#live-status').textContent(), new RegExp('已收集 ' + count + ' / 5 件装饰'));
           if (count === 5) await shot('levels-' + chapter.number);
           await click('room');
           const status = await page.locator('#live-status').textContent();
-          assert.match(status, /等距视角的小屋有两面墙、木地板/);
+          assert.match(status, chapter.theme === 'study' ? /月光书房有夜蓝窗、暖木地板/ : /等距视角的小屋有两面墙、木地板/);
           for (const item of decorations.slice(0, count)) assert.ok(status.includes(item.name));
-          for (const item of chapterDecorations(chapter.number === 1 ? 2 : 1)) assert.ok(!status.includes(item.name));
+          for (const other of CHAPTERS.filter(item => item.number !== chapter.number)) {
+            for (const item of chapterDecorations(other.number)) assert.ok(!status.includes(item.name));
+          }
           assert.equal(await page.locator('[data-key^="action-"]').count(), count * 2 + 1);
           assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
           const state = count === 5 ? 'complete' : count === 0 ? 'empty' : count === 1 ? 'first' : 'three';
@@ -89,11 +93,11 @@ async function main() {
         await click('close'); await click('chapter-1'); await click('room');
         assert.match(await page.locator('#live-status').textContent(), /已收集 5 \/ 5 件装饰/);
       }
-      console.log(size + '：两间小屋的收藏、十种互动与章节切换验证通过。');
+      console.log(size + '：' + CHAPTERS.length + ' 间小屋的收藏、家具互动与章节切换验证通过。');
       await context.close();
     }
     assert.deepEqual(errors, []);
-    console.log('家具互动验证通过：三种尺寸、每章 0/1/3/5 件收藏、十种动画、家具点击与卡片键盘操作、关闭清理、存档不变、旧通关记录开启花房与第六关恢复七格；无浏览器错误。');
+    console.log('家具互动验证通过：三种尺寸、每章 0/1/3/5 件收藏、十五种动画、家具点击与卡片键盘操作、关闭清理、存档不变、旧通关记录开启新章；无浏览器错误。');
   } finally { await browser.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
