@@ -4,14 +4,14 @@ const assert = require('node:assert/strict');
 const { Game, createLevel, createCampaignLevel, LEVELS, TYPES, SIZE } = require('../utils/game');
 const { Progress, KEY } = require('../utils/progress');
 const { GameView } = require('../utils/view');
-const { measure } = require('../scripts/difficulty-check');
+const { measure, measureLookahead } = require('../scripts/difficulty-check');
 function memory(initial) {
   const values = new Map(initial == null ? [] : [[KEY, initial]]);
   return { read: key => values.get(key), write: (key, value) => values.set(key, value), values };
 }
 function win(game) { game.level.solution.forEach(id => assert.ok(game.pick(id).ok)); assert.equal(game.status, 'won'); }
 
-test('扩到二十关仍保持前十五关生成结果完全一致，旧牌面无需重开', () => {
+test('调低后十关仍保持前十关生成结果完全一致，旧牌面无需重开', () => {
   const crypto = require('node:crypto');
   const baseline = [
     'ba66c0ebfc91fcfea6992fb02d5d1eac2c9af7d231f6c81a88c2c6cb64b1beb3',
@@ -23,14 +23,9 @@ test('扩到二十关仍保持前十五关生成结果完全一致，旧牌面�
     '5ec982e63a594a752868f3e0ff3372e3c7e41a04c9254830dfc08ad706991bdd',
     'a4bc46a59e8882f8f14aae1e4825e7b5725b991cba14ff1624a798eff08438d8',
     'b53405c35f2a0186cf5dd8e6a9fc76f4bc0876843c1a2c0d4cde1c43e21728cf',
-    '4cddd15d2319d8d34fac7847d92555690a6c05579a5db6f26519406d32b91f33',
-    '901fc5d4ed30f00a78399e3b352de21a6f3c334297aae3f6d821c174463d47e5',
-    'bb72f5d9f622f178164abc8a2fd30b61b25ed97de85516e47792578b06807c4c',
-    '924cc52629342d976fd70eebe1578c3e1eb7d4f448f515fac5405836f7782673',
-    'ef12291367d26842c41e9c7f01aefa41f953ad66bfc66a1fc79de1b9cd5af7ac',
-    'bfeb18248f30d5c79dfdee62bd5e3f34d235d21650fe4e65c43a070a615e6c05'
+    '4cddd15d2319d8d34fac7847d92555690a6c05579a5db6f26519406d32b91f33'
   ];
-  assert.deepEqual(LEVELS.slice(0, 15).map(info => crypto.createHash('sha256').update(JSON.stringify(createCampaignLevel(info.number))).digest('hex')), baseline);
+  assert.deepEqual(LEVELS.slice(0, 10).map(info => crypto.createHash('sha256').update(JSON.stringify(createCampaignLevel(info.number))).digest('hex')), baseline);
 });
 
 test('第二章以七格轻松关重新开始，再逐步增加挑战', () => {
@@ -93,7 +88,7 @@ test('旧十关通关自动解锁第十一关，第三章只收藏新奖励且�
   assert.equal(view.progress.nextDecoration(3).id, 'books');
   assert.deepEqual(view.progress.decorations(2).map(item => item.id), ['mat', 'can', 'flowers', 'chime', 'stand']);
 });
-test('旧十五关通关开启第十六关，保留第三章牌局、道具和收藏且第四章从空屋开始', () => {
+test('十五关通关开启第十六关，当前修订的第三章牌局和道具恢复，第四章从空屋开始', () => {
   const level = createCampaignLevel(14), moves = level.solution.slice(0, 4);
   const completed = Array.from({ length: 15 }, (_, i) => i + 1);
   const storage = memory(JSON.stringify({ version: 1, completed, currentLevel: 15, sound: false,
@@ -113,7 +108,7 @@ test('旧十五关通关开启第十六关，保留第三章牌局、道具和�
   assert.deepEqual(progress.decorations(4).map(item => item.id), ['sunMat']);
   assert.equal(progress.decorations(3).length, 5); assert.equal(new Progress(storage).unlocked(), 17);
 });
-test('旧第十五关进行中局面和已用道具继续恢复，扩章不触发重开', () => {
+test('当前修订的第十五关进行中局面和已用道具继续恢复，不重复重开', () => {
   const level = createCampaignLevel(15), moves = level.solution.slice(0, 5);
   const storage = memory(JSON.stringify({ version: 1, completed: Array.from({ length: 14 }, (_, i) => i + 1), currentLevel: 15,
     runs: { 15: moves }, runRevisions: { 15: level.revision }, runToolsUsed: { 15: { undo: 1, hint: 1 } }, runUnlockedSlots: { 15: 1 } }));
@@ -122,6 +117,44 @@ test('旧第十五关进行中局面和已用道具继续恢复，扩章不触�
   assert.deepEqual(game.moves, moves); assert.equal(game.steps, 5); assert.equal(game.capacity, 6);
   assert.equal(game.remainingTools('undo'), 2); assert.equal(game.remainingTools('hint'), 0);
   assert.equal(progress.gameFor(16), null); assert.equal(progress.decorations().length, 14);
+});
+
+test('第11至20关旧修订安全重开，保留前十关局面、已通关收藏及声音，新局可正常恢复', () => {
+  const oldRuns = { 11: [55, 56, 50, 59], 12: [52, 57, 50, 58], 13: [57, 54, 49, 52], 14: [58, 54, 55, 59],
+    15: [51, 53, 59, 57], 16: [59, 58, 54, 53], 17: [58, 51, 59, 57], 18: [54, 50, 53, 51], 19: [55, 52, 59, 58], 20: [52, 59, 49, 58] };
+  const ninth = createCampaignLevel(9), preservedMoves = ninth.solution.slice(0, 4);
+  for (const number of Object.keys(oldRuns).map(Number)) {
+    for (const completedCount of [number - 1, number]) {
+      const completed = Array.from({ length: completedCount }, (_, i) => i + 1);
+      const storage = memory(JSON.stringify({ version: 1, completed, currentLevel: number, sound: false,
+        runs: { 9: preservedMoves, [number]: oldRuns[number] }, runRevisions: { 9: ninth.revision, [number]: 1 },
+        runToolsUsed: { 9: { undo: 2, hint: 1 }, [number]: { undo: 3, hint: 1 } }, runUnlockedSlots: { 9: 1, [number]: 2 } }));
+      const progress = new Progress(storage), revised = progress.gameFor(number), preserved = progress.gameFor(9);
+      assert.ok(progress.updatedRuns); assert.equal(revised.level.revision, 2);
+      assert.equal(revised.remaining(), 60); assert.equal(revised.steps, 0); assert.equal(revised.capacity, 5);
+      assert.equal(revised.remainingTools('undo'), 3); assert.equal(revised.remainingTools('hint'), 1);
+      assert.deepEqual(progress.state.completed, completed); assert.equal(progress.decorations().length, completedCount);
+      assert.equal(progress.state.sound, false); assert.deepEqual(preserved.moves, preservedMoves);
+      assert.equal(preserved.capacity, 6); assert.equal(preserved.remainingTools('undo'), 1); assert.equal(preserved.remainingTools('hint'), 0);
+      revised.pick(revised.level.solution[0]); progress.save(revised);
+      const restored = new Progress(storage);
+      assert.equal(restored.updatedRuns, false); assert.equal(restored.gameFor(number).steps, 1);
+      assert.equal(restored.state.runRevisions[number], 2); assert.deepEqual(restored.gameFor(9).moves, preservedMoves);
+      assert.deepEqual(restored.state.completed, completed); assert.equal(restored.state.sound, false);
+    }
+  }
+});
+
+test('第11至15关衔接第十关缓慢加难，最后五关仅小幅放宽配对且仍有挑战', () => {
+  const rates = LEVELS.slice(9).map(info => measureLookahead(createCampaignLevel(info.number), 100).rate);
+  const tenth = rates[0], study = rates.slice(1, 6), terrace = rates.slice(6);
+  assert.ok(study[0] < tenth && tenth - study[0] <= 0.07, '第11关应紧接第10关：' + rates);
+  study.forEach((rate, index) => {
+    assert.ok(rate >= 0.2 && rate < tenth, '第三章应温和增难：' + rates);
+    if (index) assert.ok(rate <= study[index - 1] && study[index - 1] - rate <= 0.08, '避免本章难度突变：' + rates);
+  });
+  const previous = [0.05, 0.05, 0.02, 0.06, 0];
+  terrace.forEach((rate, index) => assert.ok(rate > previous[index] && rate <= previous[index] + 0.09 && rate < study[4], '第四章保持挑战，仅稍微放宽：' + rates));
 });
 test('后两章固定六十张，每章逐步引入五种新图案，最终共十八种样式', () => {
   assert.equal(TYPES.length, 18);
@@ -220,7 +253,7 @@ test('新版关卡不套用旧布局局面，旧第一关重开为30张，通关
 test('四章各五关牌量、图案数与实际遮挡深度符合配置', () => {
   assert.deepEqual(LEVELS.map(info => info.total), [30, 45, 48, 54, 60, 36, 42, 48, 54, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60]);
   assert.deepEqual(LEVELS.map(info => info.kinds), [6, 6, 7, 8, 8, 6, 6, 7, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
-  assert.deepEqual(LEVELS.map(info => info.layers), [3, 5, 6, 7, 8, 3, 4, 5, 6, 7, 8, 8, 9, 9, 10, 9, 9, 10, 10, 11]);
+  assert.deepEqual(LEVELS.map(info => info.layers), [3, 5, 6, 7, 8, 3, 4, 5, 6, 7, 7, 7, 8, 8, 9, 9, 9, 10, 10, 11]);
   LEVELS.forEach(info => {
     const level = createCampaignLevel(info.number), depths = [];
     for (let id = level.tiles.length - 1; id >= 0; id--) {
