@@ -9,6 +9,12 @@
   const SLOT_X = 36.5, SLOT_Y = 662, SLOT_STEP = 46, SLOT_SIZE = 41;
   const INK = Art.INK;
   const ROOM = { x: 36, y: 175, w: 318, h: 243 };
+  const LEVEL_ICON_COLORS = {
+    living: { background: '#f3e8d8', number: '#88694e' },
+    garden: { background: '#e5eedc', number: '#61794f' },
+    study: { background: '#ece6f2', number: '#7c688f' },
+    terrace: { background: '#f7e7d6', number: '#936d47' }
+  };
   const REACTIONS = {
     cushion: { label: '让小猫趴下休息', message: '软乎乎的，陪我歇一会儿喵～', duration: 3400 },
     basket: { label: '陪小猫玩毛线球', message: '抓到啦！再陪我玩一会儿～', duration: 3000 },
@@ -515,17 +521,21 @@
       Art.box(ctx, 25, 283, 207, 4, 2, '#e3e6d5');
       if (completed) Art.box(ctx, 25, 283, 207 * completed / 5, 4, 2, '#88ab83');
       const resume = this.progress.resumeNumber();
+      const iconColors = LEVEL_ICON_COLORS[chapter.theme];
       this.chapterLevels().forEach((level, index) => {
         const y = 306 + index * 77;
         const unlocked = this.progress.canOpen(level.number), done = this.progress.isComplete(level.number);
         const selected = level.number === resume;
         const moves = this.progress.state.runs[level.number];
+        const reward = Saved.DECORATIONS[level.number - 1];
         Art.box(ctx, 25, y + 3, 340, 66, 15, '#e0e3d1');
         Art.box(ctx, 25, y, 340, 66, 15, unlocked ? '#fffdf3' : '#eeeee2', selected ? '#bbcfab' : '#e0e4d2');
+        Art.box(ctx, 38, y + 10, 47, 47, 14, iconColors.background);
         ctx.save(); if (!unlocked) ctx.globalAlpha = 0.42;
-        Art.box(ctx, 38, y + 10, 47, 47, 14, selected ? '#edf1de' : '#e9edde');
-        Art.icon(ctx, [0, 2, 4, 5, 1][index], 61.5, y + 33, 38);
+        Art.decoration(ctx, reward.id, 61.5, y + 33, 36);
         ctx.restore();
+        Art.box(ctx, 68, y + 44, 22, 18, 6, iconColors.number, '#fffdf3');
+        text(ctx, String(level.number), 79, y + 53, 11, '#fffdf3', '600', 'center');
         text(ctx, level.number + '. ' + level.name, 103, y + 18, 14, unlocked ? INK : '#a4ac95', '600');
         let note = level.total + ' 张 · ' + level.kinds + ' 种图案 · ' + level.layers + ' 层堆叠';
         if (!unlocked) note = level.kinds + ' 种 · ' + level.layers + ' 层 · 通过第 ' + (level.number - 1) + ' 关解锁';
@@ -533,7 +543,7 @@
         else if (done) note = level.total + ' 张 · ' + level.kinds + ' 种 · ' + level.layers + ' 层 · 可重玩';
         else if (level.newKind != null) note = level.total + ' 张 · ' + level.kinds + ' 种 · 新增' + Core.TYPES[level.newKind].name;
         text(ctx, note, 103, y + 35, 10, unlocked ? '#95a181' : '#afb69e');
-        text(ctx, (done ? '已摆放 · ' : '通关奖励 · ') + Saved.DECORATIONS[level.number - 1].name, 103, y + 53, 11, done ? '#b59669' : '#8f9e83');
+        text(ctx, (done ? '已摆放 · ' : '通关奖励 · ') + reward.name, 103, y + 53, 11, done ? '#b59669' : '#8f9e83');
         if (done) Art.star(ctx, 338, y + 27, 7, '#d8b265');
         else if (unlocked) Art.stroke(ctx, [[334, y + 27], [340, y + 33], [334, y + 39]], '#93a47f', 1.6);
         else {
