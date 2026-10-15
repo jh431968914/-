@@ -166,12 +166,12 @@ test('小游戏首次奖励支持安全区内跳过与续关，旧 Canvas 和静
   assert.deepEqual(JSON.parse(dev.storage.get(KEY)).completed, [1]); dev.runtime.destroy();
 });
 
-test('小游戏小屏安全区内可操作二十关感谢页和最后露台奖励，静音旧Canvas正常绘制十八种牌', () => {
+test('小游戏小屏安全区内可操作二十关感谢页和最后露台奖励，静音旧Canvas正常绘制八种牌', () => {
   const storage = new Map([[KEY, JSON.stringify({ version: 1, completed: Array.from({ length: 19 }, (_, i) => i + 1), currentLevel: 20, sound: false })]]);
   const dev = mock({ storage, noEllipse: true }), view = dev.runtime.view;
   dev.info.windowWidth = 320; dev.info.windowHeight = 640; dev.info.screenHeight = 640;
   dev.info.safeArea.bottom = 620; dev.callbacks.WindowResize();
-  view.press('resume'); assert.equal(view.game.level.number, 20); assert.equal(view.game.level.kinds, 18);
+  view.press('resume'); assert.equal(view.game.level.number, 20); assert.equal(view.game.level.kinds, 8);
   view.draw(Date.now());
   view.game.level.solution.slice(0, -1).forEach(id => { view.pick(id); view.animation = null; });
   view.pick(view.game.level.solution[view.game.level.solution.length - 1]);

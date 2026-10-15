@@ -13,6 +13,8 @@
     { number: 4, name: '晨光露台', first: 16, last: 20, theme: 'terrace' }
   ];
   function chapterFor(number) { return CHAPTERS.find(chapter => number >= chapter.first && number <= chapter.last); }
+  const STUDY_PALETTE = [0, 1, 2, 3, 4, 5, 7, 8];
+  const TERRACE_PALETTE = [0, 1, 2, 3, 4, 5, 8, 9];
   const LEVELS = [
     { number: 1, name: '猫咪的小屋', difficulty: '轻松 · 入门', total: 30, kinds: 6, layers: 3, lockedSlots: 0, revision: 2, seed: 20261012, note: '从熟悉的小屋开始' },
     { number: 2, name: '窗边的午后', difficulty: '挑战 · 进阶', total: 45, kinds: 6, layers: 5, lockedSlots: 1, revision: 4, seed: 20269956, note: '先看第三张，再动手' },
@@ -24,16 +26,16 @@
     { number: 8, name: '雏菊开花啦', difficulty: '进阶 · 选择', total: 48, kinds: 7, layers: 5, lockedSlots: 1, revision: 1, seed: 20261112, note: '看看花丛下面藏着什么' },
     { number: 9, name: '风铃轻轻响', difficulty: '困难 · 规划', total: 54, kinds: 7, layers: 6, lockedSlots: 2, revision: 1, seed: 20261122, note: '留好空位，再揭开下一层' },
     { number: 10, name: '满屋好时光', difficulty: '高难 · 收官', total: 60, kinds: 8, layers: 7, lockedSlots: 2, revision: 2, seed: 20262320, note: '看清深层配对，再带回最后一份心意' },
-    { number: 11, name: '月光翻书页', difficulty: '高难 · 新图案', total: 60, kinds: 9, layers: 7, lockedSlots: 2, revision: 2, seed: 20262630, newKind: 8, note: '新伙伴：猫咪饼干，先找第三张' },
-    { number: 12, name: '睡前小故事', difficulty: '高难 · 取舍', total: 60, kinds: 10, layers: 7, lockedSlots: 2, revision: 2, seed: 20262335, newKind: 9, note: '新伙伴：猫咪牛奶，给配对留出空位' },
-    { number: 13, name: '花香伴晚安', difficulty: '高难 · 规划', total: 60, kinds: 11, layers: 8, lockedSlots: 2, revision: 2, seed: 20272431, newKind: 10, note: '新伙伴：蝴蝶结，分清每一组图案' },
-    { number: 14, name: '时针轻轻走', difficulty: '高难 · 深层', total: 60, kinds: 12, layers: 8, lockedSlots: 2, revision: 2, seed: 20272140, newKind: 11, note: '新伙伴：羽毛玩具，先想两步再取牌' },
-    { number: 15, name: '灯下好梦来', difficulty: '高难 · 收官', total: 60, kinds: 13, layers: 9, lockedSlots: 2, revision: 2, seed: 20285765, newKind: 12, note: '新伙伴：小纸箱，把所有配对带回家' },
-    { number: 16, name: '晨光推开窗', difficulty: '极难 · 新图案', total: 60, kinds: 14, layers: 9, lockedSlots: 2, revision: 2, seed: 20292808, newKind: 13, note: '新伙伴：小鼠玩具，先找到完整的一组' },
-    { number: 17, name: '小草醒来啦', difficulty: '极难 · 取舍', total: 60, kinds: 15, layers: 9, lockedSlots: 2, revision: 2, seed: 20303800, newKind: 14, note: '新伙伴：猫草盆，给每一组留下空位' },
-    { number: 18, name: '把爱抱怀里', difficulty: '极难 · 规划', total: 60, kinds: 16, layers: 10, lockedSlots: 2, revision: 2, seed: 20304046, newKind: 15, note: '新伙伴：爱心抱枕，多看一步再动手' },
-    { number: 19, name: '星光挂起来', difficulty: '极难 · 深层', total: 60, kinds: 17, layers: 10, lockedSlots: 2, revision: 2, seed: 20306543, newKind: 16, note: '新伙伴：星星挂饰，把配对的线索连起来' },
-    { number: 20, name: '小屋就是家', difficulty: '极难 · 终章', total: 60, kinds: 18, layers: 11, lockedSlots: 2, revision: 2, seed: 20311279, newKind: 17, note: '新伙伴：小铃鼓，带着最后一份心意回家' }
+    { number: 11, name: '月光翻书页', difficulty: '适中 · 新伙伴', total: 60, kinds: 8, palette: STUDY_PALETTE, layers: 7, lockedSlots: 2, revision: 3, seed: 20262630, newKind: 8, note: '新伙伴：蝴蝶结，熟悉的朋友慢慢配' },
+    { number: 12, name: '睡前小故事', difficulty: '进阶 · 观察', total: 60, kinds: 8, palette: STUDY_PALETTE, layers: 7, lockedSlots: 2, revision: 3, seed: 20262339, note: '看清配对，再翻开下一层' },
+    { number: 13, name: '花香伴晚安', difficulty: '进阶 · 规划', total: 60, kinds: 8, palette: STUDY_PALETTE, layers: 8, lockedSlots: 2, revision: 3, seed: 20272456, note: '给暂存的小伙伴留一点空位' },
+    { number: 14, name: '时针轻轻走', difficulty: '挑战 · 深层', total: 60, kinds: 8, palette: STUDY_PALETTE, layers: 8, lockedSlots: 2, revision: 3, seed: 20272186, note: '先找到第三张，再动手' },
+    { number: 15, name: '灯下好梦来', difficulty: '挑战 · 收官', total: 60, kinds: 8, palette: STUDY_PALETTE, layers: 9, lockedSlots: 2, revision: 3, seed: 20285813, note: '慢慢配好，给小猫留一盏灯' },
+    { number: 16, name: '晨光推开窗', difficulty: '挑战 · 新伙伴', total: 60, kinds: 8, palette: TERRACE_PALETTE, layers: 9, lockedSlots: 2, revision: 3, seed: 20292840, newKind: 9, note: '新伙伴：小纸箱，带着熟悉的朋友迎接晨光' },
+    { number: 17, name: '小草醒来啦', difficulty: '挑战 · 取舍', total: 60, kinds: 8, palette: TERRACE_PALETTE, layers: 9, lockedSlots: 2, revision: 3, seed: 20303805, note: '先找成对的小伙伴，再揭开下面' },
+    { number: 18, name: '把爱抱怀里', difficulty: '高难 · 规划', total: 60, kinds: 8, palette: TERRACE_PALETTE, layers: 10, lockedSlots: 2, revision: 3, seed: 20304078, note: '多看一步，把配对带回小屋' },
+    { number: 19, name: '星光挂起来', difficulty: '高难 · 深层', total: 60, kinds: 8, palette: TERRACE_PALETTE, layers: 10, lockedSlots: 2, revision: 3, seed: 20306632, note: '把配对的线索轻轻连起来' },
+    { number: 20, name: '小屋就是家', difficulty: '高难 · 终章', total: 60, kinds: 8, palette: TERRACE_PALETTE, layers: 11, lockedSlots: 2, revision: 3, seed: 20311370, note: '熟悉的伙伴，陪你把小屋变成家' }
   ];
   const TYPES = [
     { name: '橘猫', color: '#f5b66b', bg: '#fff0d9' },
@@ -44,16 +46,8 @@
     { name: '猫爪', color: '#b59bc6', bg: '#efe6f6' },
     { name: '铃铛', color: '#d3aa58', bg: '#fff1d0' },
     { name: '猫碗', color: '#83a6c7', bg: '#e3eef7' },
-    { name: '猫咪饼干', color: '#d3a565', bg: '#fff0d6' },
-    { name: '猫咪牛奶', color: '#83b2c5', bg: '#e7f4f7' },
     { name: '蝴蝶结', color: '#d497a8', bg: '#fbe9ee' },
-    { name: '羽毛玩具', color: '#88b59a', bg: '#e8f5e9' },
-    { name: '小纸箱', color: '#ba9874', bg: '#f5ebdc' },
-    { name: '小鼠玩具', color: '#a09aac', bg: '#eeeaf3' },
-    { name: '猫草盆', color: '#86a879', bg: '#edf4df' },
-    { name: '爱心抱枕', color: '#dc9b96', bg: '#fbe8e2' },
-    { name: '星星挂饰', color: '#d7b56d', bg: '#fff3d9' },
-    { name: '小铃鼓', color: '#c69a82', bg: '#f8e9df' }
+    { name: '小纸箱', color: '#ba9874', bg: '#f5ebdc' }
   ];
   function random(seed) {
     let value = seed >>> 0;
@@ -182,7 +176,8 @@
     } else if (number === 6) {
       batches.forEach(([a, b, c]) => kinds.push(a, b, a, c, b, a, c, b, c));
     } else kinds.push.apply(kinds, mixedKinds(tiles.length, info.kinds, number >= 10 ? number - 2 : number > 5 ? number - 5 : number, rng, levelCapacity(info)));
-    solution.forEach((id, i) => { tiles[id].kind = kinds[i]; });
+    // Generate counts in a dense local pool, then map to the chapter's actual card IDs.
+    solution.forEach((id, i) => { tiles[id].kind = info.palette ? info.palette[kinds[i]] : kinds[i]; });
     return Object.assign({}, info, { tiles, solution, seed });
   }
   function createCampaignLevel(number, seed) { return createLevel(seed, number); }

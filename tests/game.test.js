@@ -82,7 +82,7 @@ function highIdFixture() {
   level.tiles[2].blockers = [98];
   level.tiles[32].blockers = [64];
   level.tiles[64].blockers = [101];
-  const firstGroups = [2, 33, 32, 21, 10];
+  const firstGroups = [1, 33, 32, 21, 10];
   const groups = firstGroups.concat(Array.from({ length: 36 }, (_, i) => i).filter(i => !firstGroups.includes(i)));
   level.solution = groups.flatMap(group => [group * 3, group * 3 + 1, group * 3 + 2]);
   return level;
@@ -104,7 +104,8 @@ test('多段位掩码不混淆跨32、64和96的图块或遮挡，偏离证书�
   assert.deepEqual(route.slice().sort((a, b) => a - b), level.tiles.filter(tile => before.alive[tile.id]).map(tile => tile.id));
   assert.equal(new Set(route).size, route.length);
   assert.ok(route.includes(32) && route.includes(64) && route.includes(98) && route.includes(101));
-  assert.ok(route.some(id => level.tiles[id].kind >= 13), '搜索涵盖第四章新增的图案种类');
+  assert.ok(route.some(id => level.tiles[id].kind === 8), '搜索涵盖蝴蝶结');
+  assert.ok(route.some(id => level.tiles[id].kind === 9), '搜索涵盖编号最高的小纸箱');
   assert.deepEqual(game.alive, before.alive); assert.deepEqual(game.moves, before.moves);
   assert.deepEqual(game.tray, before.tray); assert.deepEqual(game.toolsUsed, before.toolsUsed);
   assert.deepEqual(game.hint(), route); assert.equal(game.remainingTools('hint'), 0);

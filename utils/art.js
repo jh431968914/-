@@ -71,6 +71,17 @@
     [[-27, 7, -19, 8], [-27, 12, -19, 11], [19, 8, 27, 7], [19, 11, 27, 12]]
       .forEach(p => stroke(ctx, [[p[0], p[1]], [p[2], p[3]]], kind === 1 ? '#98a49a' : '#bb9470', 1.2));
   }
+  // The terrace picnic snack is scenery, independent of the matchable tile types.
+  function picnicSnack(ctx, x, y, size) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(size / 64, size / 64);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    box(ctx, -24, -24, 48, 48, 12, '#e4b46b', '#bc8a49');
+    box(ctx, -20, -20, 40, 40, 9, '#f0cb87');
+    [[-14, -14], [14, -14], [-14, 14], [14, 14]].forEach(p => ellipse(ctx, p[0], p[1], 1.5, 1.5, '#bc8a49'));
+    [[-11, -4, -0.45], [-4, -11, -0.2], [5, -11, 0.2], [12, -3, 0.45]].forEach(p => ellipse(ctx, p[0], p[1], 3.4, 4.5, '#ba8549', p[2]));
+    ellipse(ctx, 0, 7, 10, 8, '#ba8549'); ellipse(ctx, -4, 4, 2.5, 1.5, '#e2b06c');
+    ctx.restore();
+  }
   function icon(ctx, kind, x, y, size) {
     ctx.save(); ctx.translate(x, y); ctx.scale(size / 64, size / 64);
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -124,25 +135,6 @@
       stroke(ctx, [[-19, 8], [-17, 14]], '#b6d0e2', 2);
     }
     if (kind === 8) {
-      box(ctx, -24, -24, 48, 48, 12, '#e4b46b', '#bc8a49');
-      box(ctx, -20, -20, 40, 40, 9, '#f0cb87');
-      [[-14, -14], [14, -14], [-14, 14], [14, 14]].forEach(p => ellipse(ctx, p[0], p[1], 1.5, 1.5, '#bc8a49'));
-      [[-11, -4, -0.45], [-4, -11, -0.2], [5, -11, 0.2], [12, -3, 0.45]].forEach(p => ellipse(ctx, p[0], p[1], 3.4, 4.5, '#ba8549', p[2]));
-      ellipse(ctx, 0, 7, 10, 8, '#ba8549'); ellipse(ctx, -4, 4, 2.5, 1.5, '#e2b06c');
-    }
-    if (kind === 9) {
-      ctx.beginPath(); ctx.moveTo(-10, -22); ctx.lineTo(10, -22); ctx.lineTo(10, -12);
-      ctx.quadraticCurveTo(18, -7, 18, 0); ctx.lineTo(18, 23); ctx.quadraticCurveTo(18, 27, 13, 27);
-      ctx.lineTo(-13, 27); ctx.quadraticCurveTo(-18, 27, -18, 23); ctx.lineTo(-18, 0);
-      ctx.quadraticCurveTo(-18, -7, -10, -12); ctx.closePath(); ctx.fillStyle = '#f4f6ed'; ctx.fill();
-      ctx.strokeStyle = '#8aaaba'; ctx.lineWidth = 2; ctx.stroke();
-      box(ctx, -12, -27, 24, 8, 3, '#86aabd'); stroke(ctx, [[-7, -24], [7, -24]], '#bad0db', 1.5);
-      box(ctx, -14, 1, 28, 18, 3, '#a6c6d6');
-      ellipse(ctx, 0, 10, 5, 3.5, '#eef5ef');
-      [[-5, 5], [-1, 3], [3, 4], [6, 6]].forEach(p => ellipse(ctx, p[0], p[1], 1.6, 2, '#eef5ef'));
-      stroke(ctx, [[-12, -7], [-13, -2]], '#ffffff', 2.5);
-    }
-    if (kind === 10) {
       ctx.beginPath(); ctx.moveTo(-5, -3); ctx.quadraticCurveTo(-21, -26, -27, -19);
       ctx.quadraticCurveTo(-29, -1, -22, 13); ctx.quadraticCurveTo(-13, 15, -5, 3);
       ctx.closePath(); ctx.fillStyle = '#dc96ad'; ctx.fill();
@@ -154,16 +146,7 @@
       stroke(ctx, [[-23, -14], [-8, -1], [-20, 8]], '#f1c1cf', 2); stroke(ctx, [[23, -14], [8, -1], [20, 8]], '#f1c1cf', 2);
       box(ctx, -6, -7, 12, 15, 4, '#bd708f'); stroke(ctx, [[-2, -4], [-2, 4]], '#e8afc2', 2);
     }
-    if (kind === 11) {
-      stroke(ctx, [[-23, 25], [8, -11]], '#b19979', 4);
-      ctx.beginPath(); ctx.moveTo(-3, 8); ctx.bezierCurveTo(-25, -13, 1, -28, 24, -27);
-      ctx.bezierCurveTo(28, -5, 12, 13, -3, 8); ctx.closePath(); ctx.fillStyle = '#80b4a2'; ctx.fill();
-      stroke(ctx, [[-7, 13], [19, -21]], '#497f72', 2);
-      [[-2, 6, -10, -2], [4, -2, -2, -12], [10, -10, 8, -20], [0, 4, 11, 6], [7, -5, 19, -4], [13, -13, 23, -13]].forEach(p =>
-        stroke(ctx, [[p[0], p[1]], [p[2], p[3]]], '#c0d9bb', 1.4));
-      ellipse(ctx, -11, 16, 4, 4, '#d9bb6e'); stroke(ctx, [[-24, 21], [-20, 25]], '#d5c3a2', 2);
-    }
-    if (kind === 12) {
+    if (kind === 9) {
       ctx.beginPath(); ctx.moveTo(-23, -6); ctx.lineTo(0, -14); ctx.lineTo(24, -6); ctx.lineTo(24, 18);
       ctx.lineTo(1, 27); ctx.lineTo(-23, 18); ctx.closePath(); ctx.fillStyle = '#caa16f'; ctx.fill();
       ctx.beginPath(); ctx.moveTo(1, 2); ctx.lineTo(24, -6); ctx.lineTo(24, 18); ctx.lineTo(1, 27); ctx.closePath(); ctx.fillStyle = '#b78a5c'; ctx.fill();
@@ -173,44 +156,6 @@
       stroke(ctx, [[1, 3], [1, 25]], '#a47950', 1.3); stroke(ctx, [[-18, 2], [-18, 14]], '#e8c89c', 2);
       ctx.save(); ctx.translate(-10, 10); ctx.scale(0.32, 0.32);
       ellipse(ctx, 0, 8, 10, 8, '#896644'); [[-10, -2], [-3, -10], [5, -10], [12, -2]].forEach(p => ellipse(ctx, p[0], p[1], 3.5, 4.5, '#896644')); ctx.restore();
-    }
-    if (kind === 13) {
-      ctx.beginPath(); ctx.moveTo(15, 11); ctx.bezierCurveTo(38, 2, 23, -13, 29, -20);
-      ctx.strokeStyle = '#b2a995'; ctx.lineWidth = 2; ctx.stroke();
-      ellipse(ctx, -2, 7, 23, 14, '#bcb6a4', -0.16); ellipse(ctx, -16, -3, 7, 9, '#bcb6a4', -0.1);
-      ellipse(ctx, -16, -3, 4, 6, '#e4c5b5', -0.1); ellipse(ctx, -13, 7, 2, 2, '#52605a');
-      ellipse(ctx, -26, 12, 3, 2.5, '#b8817b'); stroke(ctx, [[-24, 16], [-16, 17]], '#e2dbcc', 1.5);
-      stroke(ctx, [[-2, -3], [5, 17]], '#e3ded0', 1.2);
-    }
-    if (kind === 14) {
-      [[-14, -25], [-5, -31], [4, -27], [14, -30], [21, -19]].forEach(([px, py], index) => {
-        stroke(ctx, [[(px - 2) * 0.45, 5], [px, py]], index % 2 ? '#7d9f70' : '#9eb47e', 2.2);
-        stroke(ctx, [[px, py + 9], [px - 6, py + 4]], '#9eb47e', 1.6);
-      });
-      ctx.beginPath(); ctx.moveTo(-21, -1); ctx.lineTo(21, -1); ctx.lineTo(15, 26); ctx.lineTo(-15, 26); ctx.closePath(); ctx.fillStyle = '#a2b782'; ctx.fill();
-      box(ctx, -23, -5, 46, 8, 3, '#c4d09d'); stroke(ctx, [[-15, 8], [-12, 20]], '#d8e2b6', 2);
-      ellipse(ctx, 5, 13, 5, 4, '#e3e8c7');
-    }
-    if (kind === 15) {
-      ctx.beginPath(); ctx.moveTo(0, -13); ctx.bezierCurveTo(-10, -30, -28, -24, -27, -7);
-      ctx.bezierCurveTo(-28, 8, -10, 21, 0, 29); ctx.bezierCurveTo(10, 21, 28, 8, 27, -7);
-      ctx.bezierCurveTo(28, -24, 10, -30, 0, -13); ctx.closePath(); ctx.fillStyle = '#da9b88'; ctx.fill();
-      ctx.strokeStyle = '#be7d71'; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-17, -14); ctx.quadraticCurveTo(-22, -2, -15, 5); ctx.strokeStyle = '#efc1ae'; ctx.lineWidth = 3; ctx.stroke();
-      [[-11, 12], [11, 12], [0, 22]].forEach(p => ellipse(ctx, p[0], p[1], 1.4, 1.4, '#efc1ae'));
-    }
-    if (kind === 16) {
-      ctx.beginPath(); ctx.arc(0, -26, 4, 0, Math.PI * 2); ctx.strokeStyle = '#b79e70'; ctx.lineWidth = 1.8; ctx.stroke();
-      stroke(ctx, [[0, -22], [0, -12]], '#b79e70', 1.8); star(ctx, 0, 8, 28, '#dfbc6a'); star(ctx, 0, 8, 20, '#f4d995');
-      stroke(ctx, [[-8, 5], [-3, 0]], '#fff0c0', 2.5); ellipse(ctx, -4, 11, 1.3, 1.3, '#c3a05d'); ellipse(ctx, 4, 11, 1.3, 1.3, '#c3a05d');
-    }
-    if (kind === 17) {
-      ellipse(ctx, 0, 4, 26, 25, '#d5a291'); ellipse(ctx, 0, 0, 26, 24, '#ecc3a4'); ellipse(ctx, 0, 0, 21, 19, '#fff0d6');
-      [[-24, -2], [0, -23], [24, -2], [16, 21], [-16, 21]].forEach(([px, py]) => {
-        ellipse(ctx, px, py + 2, 4.5, 3, '#a5957a'); ellipse(ctx, px, py, 4.5, 3, '#dacdaf'); stroke(ctx, [[px - 2.5, py], [px + 2.5, py]], '#b9ac8e', 0.9);
-      });
-      ctx.save(); ctx.translate(0, 1); ctx.scale(0.4, 0.4); icon(ctx, 5, 0, 0, 55); ctx.restore();
-      stroke(ctx, [[-12, -11], [-5, -14]], '#f8dcc0', 2);
     }
     ctx.restore();
   }
@@ -731,7 +676,7 @@
       if (garden) {
         [0, 1, 2].forEach(i => ellipse(ctx, -i * sx * 0.13, -sx * (0.2 + (elapsed / 700 + i / 3) % 1), sx * 0.045, sx * 0.07, '#87b7b4'));
       } else if (terrace) {
-        ctx.rotate(pulse * 0.08); icon(ctx, 8, 0, 0, sx * 0.64);
+        ctx.rotate(pulse * 0.08); picnicSnack(ctx, 0, 0, sx * 0.64);
       } else if (study) {
         ctx.rotate(pulse * 0.12);
         const pageWidth = sx * 0.42, pageHeight = sx * 0.34;

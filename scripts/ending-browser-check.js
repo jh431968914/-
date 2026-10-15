@@ -21,7 +21,7 @@ async function main() {
       await page.goto('http://127.0.0.1:4173', { waitUntil: 'load' });
       const click = async action => { await page.locator('[data-key="action-' + action + '"]').click(); await page.clock.runFor(20); };
       const status = () => page.locator('#live-status').textContent();
-      const shot = async name => { await page.clock.runFor(20); await page.screenshot({ path: path.resolve(__dirname, '../tests/ending-v13-' + name + '-' + size + '.png'), fullPage: true }); };
+      const shot = async name => { await page.clock.runFor(20); await page.screenshot({ path: path.resolve(__dirname, '../tests/ending-v16-' + name + '-' + size + '.png'), fullPage: true }); };
       const seed = async value => {
         await page.evaluate(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), { key: KEY, value });
         await page.reload({ waitUntil: 'load' });
@@ -36,7 +36,12 @@ async function main() {
           const level = createCampaignLevel(info.number);
           assert.equal(await page.locator('[data-key^="tile-"]').count(), 60);
           assert.equal(await page.locator('[data-key^="action-locked-slot-"]').count(), 2);
-          assert.ok(await page.getByRole('button', { name: new RegExp(TYPES[info.newKind].name) }).count());
+          const tileKinds = new Set(level.tiles.map(tile => tile.kind));
+          assert.deepEqual([...tileKinds].sort((a, b) => a - b), [0, 1, 2, 3, 4, 5, 8, 9]);
+          for (const kind of tileKinds) assert.ok(await page.getByRole('button', { name: new RegExp(TYPES[kind].name) }).count());
+          for (const removed of ['铃铛', '猫碗', '猫咪饼干', '猫咪牛奶', '羽毛玩具', '小鼠玩具', '猫草盆', '爱心抱枕', '星星挂饰', '小铃鼓']) {
+            assert.equal(await page.getByRole('button', { name: new RegExp(removed) }).count(), 0);
+          }
           await shot('level-' + info.number);
           for (const id of level.solution) {
             await page.locator('[data-key="tile-' + id + '"]').click(); await page.clock.runFor(500);
